@@ -15,15 +15,17 @@ activa. Los importes son solo etiquetas visuales; el cobro real lo define el
 link de MercadoPago que pegues.
 """
 
-CURRENCY_SYMBOL = "$"
+CURRENCY_SYMBOL = "MX$"
 
 DONATION = {
     "currency_symbol": CURRENCY_SYMBOL,
     "options": [
-        {"amount": 5,  "url": ""},   # ← pega aquí tu link de MercadoPago de 5
-        {"amount": 10, "url": ""},   # ← pega aquí tu link de MercadoPago de 10
-        {"amount": 20, "url": ""},   # ← pega aquí tu link de MercadoPago de 20
+        {"amount": 100, "url": "https://mpago.la/14cZKwB"},  # ~5 USD
+        {"amount": 200, "url": "https://mpago.la/1oKDjC9"},  # ~10 USD
+        {"amount": 400, "url": "https://mpago.la/24XgiDF"},  # ~20 USD
     ],
-    # Link de monto variable (opcional). Si lo dejas vacío, no aparece el botón.
+    # Link de monto variable (opcional). Si lo dejas vacío, no aparece el botón
+    # "Otro monto". MercadoPago no permite un monto arbitrario con un link fijo;
+    # para monto libre haría falta Checkout Pro (servidor + credenciales).
     "custom_url": "",
 }
