@@ -73,7 +73,11 @@ button.primary { background: var(--accent); border-color: var(--accent); width: 
   right: 6px;
   top: 50%;
   transform: translateY(-50%);
-  padding: 4px 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 5px;
+  line-height: 0;
   border-radius: 6px;
   opacity: 0;
   color: var(--muted);
@@ -326,6 +330,14 @@ button.record.on { background: var(--rec); border-color: var(--rec); color: #fff
   margin: 6px 12px 14px;
 }
 #donate-proverb.hidden { display: none; }
+#donate-sign {
+  margin: -6px 12px 14px;
+  text-align: right;
+  font-size: 12.5px;
+  font-style: italic;
+  color: var(--muted);
+}
+#donate-sign.hidden { display: none; }
 #donate-ask { font-size: 13.5px; color: var(--muted); margin-bottom: 16px; }
 #donate-amounts {
   display: flex;
@@ -364,6 +376,14 @@ button.record.on { background: var(--rec); border-color: var(--rec); color: #fff
   gap: 6px;
   font-size: 12px;
   color: var(--muted);
+  cursor: pointer;
+  opacity: 0.5;
+}
+#donate-never:hover { opacity: 0.9; }
+#donate-never input {
+  accent-color: #6b7280;
+  width: 13px;
+  height: 13px;
   cursor: pointer;
 }
 #donate-never.hidden { display: none; }

@@ -342,54 +342,71 @@ def _donation_cfg() -> dict:
         from donation_config import DONATION
         return DONATION
     except Exception:
-        return {"currency_symbol": "$", "options": [], "custom_url": ""}
+        return {}
+
+
+def _region_configured(cfg: dict, region: str) -> bool:
+    if region == "mx":
+        return any(o.get("url") for o in cfg.get("mx", {}).get("options", []))
+    return bool(cfg.get("intl", {}).get("url"))
 
 
 @app.get("/api/donation/config")
-async def donation_config():
+async def donation_config(region: str = "intl"):
+    """Perfil según región: 'mx' (MercadoPago, montos en pesos) o 'intl'
+    (Ko-fi, el donante elige el monto)."""
     cfg = _donation_cfg()
-    options = [o for o in cfg.get("options", []) if o.get("url")]
+    signature = cfg.get("signature", "")
+    if region == "mx":
+        options = [o for o in cfg.get("mx", {}).get("options", []) if o.get("url")]
+        return {
+            "configured": bool(options),
+            "mode": "amounts",
+            "currency_symbol": cfg.get("mx", {}).get("currency_symbol", "$"),
+            "amounts": [o["amount"] for o in options],
+            "signature": signature,
+        }
     return {
-        "configured": bool(options) or bool(cfg.get("custom_url")),
-        "currency_symbol": cfg.get("currency_symbol", "$"),
-        "amounts": [o["amount"] for o in options],
-        "custom": bool(cfg.get("custom_url")),
+        "configured": bool(cfg.get("intl", {}).get("url")),
+        "mode": "kofi",
+        "signature": signature,
     }
 
 
 @app.get("/api/donation/state")
-async def donation_state():
+async def donation_state(region: str = "intl"):
     """¿Mostrar el mensaje de donación? No en la 1.ª ejecución (buena primera
     impresión), ni si ya se apoyó o se pidió no volver a mostrarlo, ni si no
-    hay enlaces configurados."""
+    hay enlaces configurados para la región."""
     cfg = _donation_cfg()
-    configured = any(o.get("url") for o in cfg.get("options", [])) or bool(cfg.get("custom_url"))
     with _prefs_lock:
         prefs = load_prefs()
-    should = (configured
+    should = (_region_configured(cfg, region)
               and not prefs.get("dismissed")
               and int(prefs.get("launches", 0)) >= 2)
     return {"should_prompt": should}
 
 
 class DonateBody(BaseModel):
+    region: str = "intl"
     amount: Optional[int] = None
 
 
 @app.post("/api/donation/go")
 async def donation_go(body: DonateBody):
-    """Abre el enlace de MercadoPago del monto elegido en el navegador del
-    sistema. NO oculta el mensaje: como no se puede verificar el pago, el
-    mensaje solo se silencia si la persona marca honestamente '¡Ya doné!'
-    (endpoint dismiss). El botón de café sigue siempre visible."""
+    """Abre el enlace de pago en el navegador del sistema (MercadoPago para
+    México según el monto; Ko-fi para el resto). NO oculta el mensaje: como
+    no se puede verificar el pago, el mensaje solo se silencia si la persona
+    marca honestamente '¡Ya doné!'. El botón de café sigue siempre visible."""
     cfg = _donation_cfg()
     url = None
-    for opt in cfg.get("options", []):
-        if opt.get("amount") == body.amount and opt.get("url"):
-            url = opt["url"]
-            break
-    if url is None:
-        url = cfg.get("custom_url") or None
+    if body.region == "mx":
+        for opt in cfg.get("mx", {}).get("options", []):
+            if opt.get("amount") == body.amount and opt.get("url"):
+                url = opt["url"]
+                break
+    else:
+        url = cfg.get("intl", {}).get("url") or None
     if not url:
         raise HTTPException(400, "Las donaciones aún no están configuradas")
     if not os.environ.get("NOTETAKER_NO_BROWSER_OPEN"):
