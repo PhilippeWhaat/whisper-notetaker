@@ -264,9 +264,6 @@ async function toggleRecord() {
       language: langSelect.value,
       chunk_seconds: Number(chunkSelect.value),
     });
-    localStorage.setItem("model", modelSelect.value);
-    localStorage.setItem("language", langSelect.value);
-    localStorage.setItem("chunk", chunkSelect.value);
   } catch (err) {
     await alertModal(err.message);
     setStatus({ state: "idle" });
@@ -475,6 +472,19 @@ btnRecord.addEventListener("click", toggleRecord);
 $("#btn-new").addEventListener("click", () => openFile(null));
 $("#btn-folder").addEventListener("click", () => api("reveal", {}));
 fileNameEl.addEventListener("click", renameFile);
+
+// Persistir cada ajuste al cambiarlo (así "siempre se carga la última config").
+modelSelect.addEventListener("change", () => localStorage.setItem("model", modelSelect.value));
+langSelect.addEventListener("change", () => localStorage.setItem("language", langSelect.value));
+chunkSelect.addEventListener("change", () => localStorage.setItem("chunk", chunkSelect.value));
+
+// Selector de idioma de la interfaz (discreto, abajo a la derecha).
+document.querySelectorAll("#lang-switch button").forEach((b) => {
+  if (b.dataset.lang === window.I18N.lang) b.classList.add("active");
+  b.addEventListener("click", () => {
+    if (b.dataset.lang !== window.I18N.lang) window.I18N.setLang(b.dataset.lang);
+  });
+});
 
 window.addEventListener("beforeunload", () => {
   if (currentFile && saveTimer) {

@@ -49,7 +49,13 @@
           </select>
         </label>
       </div>
-      <button id="btn-folder" data-i18n="open_folder">📁 Abrir carpeta</button>
+      <button id="btn-folder">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
+             stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 7a2 2 0 0 1 2-2h3.6a2 2 0 0 1 1.4.6L11.4 7H19a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/>
+        </svg>
+        <span data-i18n="open_folder">Abrir carpeta</span>
+      </button>
       <button id="btn-coffee" data-i18n-title="coffee_title" title="Apoya esta herramienta">
         <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
              stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -76,6 +82,11 @@
       <span id="save-state">—</span>
       <span class="spacer"></span>
       <span id="word-count"></span>
+      <div id="lang-switch">
+        <button data-lang="es">ES</button>
+        <button data-lang="en">EN</button>
+        <button data-lang="fr">FR</button>
+      </div>
     </div>
   </main>
 

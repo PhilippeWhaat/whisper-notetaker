@@ -13,7 +13,7 @@
       mic_label: "Micrófono",
       lang_label: "Idioma",
       chunk_label: "Fragmentos",
-      open_folder: "📁 Abrir carpeta",
+      open_folder: "Abrir carpeta",
       coffee: "Invítame un café",
       coffee_title: "Apoya esta herramienta",
       no_file: "Sin archivo",
@@ -21,7 +21,7 @@
       status_idle: "Listo",
       record: "Grabar",
       stop: "Detener",
-      editor_ph: "Abre o crea una transcripción y pulsa Grabar. Puedes editar el texto mientras se transcribe — con formato markdown en vivo: # Título, **negrita**, _cursiva_…",
+      editor_ph: "Abra o cree una transcripción y pulse Grabar. Puede editar el texto mientras se transcribe — con formato markdown en vivo: # Título, **negrita**, _cursiva_…",
       donate_close: "Cerrar",
       donate_unconfig: "Las donaciones aún no están disponibles.",
       donate_already: "¡Ya doné! No volver a mostrar",
@@ -29,11 +29,11 @@
       delete_title: "Enviar a la papelera",
       no_files: "Aún no hay transcripciones.",
       understood: "Entendido",
-      stop_before_switch: "Detén la grabación antes de cambiar de archivo.",
-      stop_before_rename: "Detén la grabación antes de renombrar.",
+      stop_before_switch: "Detenga la grabación antes de cambiar de archivo.",
+      stop_before_rename: "Detenga la grabación antes de renombrar.",
       rename_prompt: "Nuevo nombre del archivo:",
       rename_ok: "Renombrar",
-      delete_confirm: '¿Mover "{name}" a la papelera? Se conservará en la subcarpeta "Papelera" de tus transcripciones y podrás recuperarlo cuando quieras.',
+      delete_confirm: '¿Mover "{name}" a la papelera? Se conservará en una subcarpeta y podrá recuperarlo cuando quiera.',
       delete_ok: "Mover a la papelera",
       saving: "Guardando…",
       saved: "Guardado ✓",
@@ -47,8 +47,8 @@
       error: "Error",
       default_device: "Por defecto del sistema",
       device_default_suffix: " (predeterminado)",
-      donate_ask_prompt: "Si esta pequeña herramienta te sirve, un aporte me ayuda muchísimo. ¡Gracias! 🙏",
-      donate_ask_manual: "¡Gracias por considerarlo! Elige un monto:",
+      donate_ask_prompt: "Si esta pequeña herramienta le sirve, su aporte me ayuda muchísimo. ¡Gracias! 🙏",
+      donate_ask_manual: "¡Gracias por considerarlo! Elija un monto:",
       donate_other: "Otro monto",
       cancel: "Cancelar",
       accept: "Aceptar",
@@ -63,7 +63,7 @@
       mic_label: "Microphone",
       lang_label: "Language",
       chunk_label: "Chunks",
-      open_folder: "📁 Open folder",
+      open_folder: "Open folder",
       coffee: "Buy me a coffee",
       coffee_title: "Support this tool",
       no_file: "No file",
@@ -83,7 +83,7 @@
       stop_before_rename: "Stop recording before renaming.",
       rename_prompt: "New file name:",
       rename_ok: "Rename",
-      delete_confirm: 'Move "{name}" to the trash? It will be kept in the "Papelera" subfolder of your transcriptions and you can restore it anytime.',
+      delete_confirm: 'Move "{name}" to the trash? It will be kept in a subfolder and you can restore it anytime.',
       delete_ok: "Move to trash",
       saving: "Saving…",
       saved: "Saved ✓",
@@ -113,15 +113,15 @@
       mic_label: "Microphone",
       lang_label: "Langue",
       chunk_label: "Fragments",
-      open_folder: "📁 Ouvrir le dossier",
-      coffee: "Offre-moi un café",
-      coffee_title: "Soutiens cet outil",
+      open_folder: "Ouvrir le dossier",
+      coffee: "Offrez-moi un café",
+      coffee_title: "Soutenez cet outil",
       no_file: "Aucun fichier",
       rename_hint: "Cliquer pour renommer",
       status_idle: "Prêt",
       record: "Enregistrer",
       stop: "Arrêter",
-      editor_ph: "Ouvre ou crée une transcription et appuie sur Enregistrer. Tu peux modifier le texte pendant la transcription — avec du markdown en direct : # Titre, **gras**, _italique_…",
+      editor_ph: "Ouvrez ou créez une transcription et appuyez sur Enregistrer. Vous pouvez modifier le texte pendant la transcription — avec du markdown en direct : # Titre, **gras**, _italique_…",
       donate_close: "Fermer",
       donate_unconfig: "Les dons ne sont pas encore disponibles.",
       donate_already: "J'ai déjà fait un don — ne plus afficher",
@@ -129,11 +129,11 @@
       delete_title: "Mettre à la corbeille",
       no_files: "Aucune transcription pour l'instant.",
       understood: "Compris",
-      stop_before_switch: "Arrête l'enregistrement avant de changer de fichier.",
-      stop_before_rename: "Arrête l'enregistrement avant de renommer.",
+      stop_before_switch: "Arrêtez l'enregistrement avant de changer de fichier.",
+      stop_before_rename: "Arrêtez l'enregistrement avant de renommer.",
       rename_prompt: "Nouveau nom du fichier :",
       rename_ok: "Renommer",
-      delete_confirm: 'Mettre « {name} » à la corbeille ? Le fichier sera conservé dans le sous-dossier « Papelera » de tes transcriptions et tu pourras le récupérer à tout moment.',
+      delete_confirm: 'Mettre « {name} » à la corbeille ? Le fichier sera conservé dans un sous-dossier et vous pourrez le récupérer à tout moment.',
       delete_ok: "Mettre à la corbeille",
       saving: "Enregistrement…",
       saved: "Enregistré ✓",
@@ -147,20 +147,15 @@
       error: "Erreur",
       default_device: "Par défaut du système",
       device_default_suffix: " (par défaut)",
-      donate_ask_prompt: "Si ce petit outil t'est utile, un petit don m'aide énormément. Merci ! 🙏",
-      donate_ask_manual: "Merci d'y penser ! Choisis un montant :",
+      donate_ask_prompt: "Si ce petit outil vous est utile, votre don m'aide énormément. Merci ! 🙏",
+      donate_ask_manual: "Merci d'y penser ! Choisissez un montant :",
       donate_other: "Autre montant",
       cancel: "Annuler",
       accept: "OK",
     },
   };
 
-  function pickLang() {
-    // Override opcional: ?lang=es|en|fr (útil para probar o forzar idioma).
-    try {
-      const forced = new URLSearchParams(location.search).get("lang");
-      if (forced && T[forced]) return forced;
-    } catch (e) {}
+  function detectSystemLang() {
     const langs = (navigator.languages && navigator.languages.length)
       ? navigator.languages : [navigator.language || "en"];
     for (const raw of langs) {
@@ -170,6 +165,27 @@
       if (p.startsWith("en")) return "en";
     }
     return "en"; // ni francés ni español → inglés
+  }
+
+  function pickLang() {
+    // 1) Override por URL (?lang=), útil para pruebas.
+    try {
+      const forced = new URLSearchParams(location.search).get("lang");
+      if (forced && T[forced]) return forced;
+    } catch (e) {}
+    // 2) Elección guardada por el usuario.
+    try {
+      const saved = localStorage.getItem("uiLang");
+      if (saved && T[saved]) return saved;
+    } catch (e) {}
+    // 3) Primera apertura: idioma del sistema.
+    return detectSystemLang();
+  }
+
+  function setLang(l) {
+    if (!T[l]) return;
+    try { localStorage.setItem("uiLang", l); } catch (e) {}
+    location.reload(); // recarga limpia con el nuevo idioma
   }
 
   const lang = pickLang();
@@ -229,5 +245,5 @@
     ])();
   }
 
-  window.I18N = { lang, t, applyStatic, randomProverb };
+  window.I18N = { lang, t, applyStatic, randomProverb, setLang, available: ["es", "en", "fr"] };
 })();
