@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "notetaker",
+      "runtimeExecutable": "env",
+      "runtimeArgs": ["NOTETAKER_NO_WINDOW=1", "NOTETAKER_PORT=8794", ".venv/bin/python", "main.py"],
+      "port": 8794
+    }
+  ]
+}

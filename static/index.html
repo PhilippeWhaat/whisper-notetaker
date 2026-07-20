@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Note Taker</title>
+  <link rel="icon" href="/static/logo.png">
+  <link rel="stylesheet" href="/static/vendor/codemirror.min.css">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <aside id="sidebar">
+    <header>
+      <img id="logo" src="/static/logo.png" alt="Note Taker">
+      <button id="btn-new" class="primary">+ Nueva transcripción</button>
+    </header>
+    <ul id="file-list"></ul>
+    <footer>
+      <label class="field">
+        <span>Modelo</span>
+        <select id="model-select">
+          <option value="tiny">tiny — muy rápido</option>
+          <option value="base">base — rápido</option>
+          <option value="small">small — rápido y preciso</option>
+          <option value="medium" selected>medium — recomendado</option>
+        </select>
+      </label>
+      <label class="field">
+        <span>Micrófono</span>
+        <select id="device-select"></select>
+      </label>
+      <div class="field-row">
+        <label class="field">
+          <span>Idioma</span>
+          <select id="lang-select">
+            <option value="es" selected>Español</option>
+            <option value="en">English</option>
+            <option value="fr">Français</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Fragmentos</span>
+          <select id="chunk-select">
+            <option value="5">5 s</option>
+            <option value="8">8 s</option>
+            <option value="10">10 s</option>
+            <option value="15">15 s</option>
+            <option value="20" selected>20 s</option>
+          </select>
+        </label>
+      </div>
+      <button id="btn-folder">📁 Abrir carpeta</button>
+    </footer>
+  </aside>
+
+  <main id="main">
+    <div id="toolbar">
+      <span id="file-name" title="Clic para renombrar">Sin archivo</span>
+      <span class="spacer"></span>
+      <span id="status-pill" class="pill idle">Listo</span>
+      <button id="btn-record" class="record" disabled>● Grabar</button>
+    </div>
+    <div id="editor-wrap">
+      <textarea id="editor"
+        placeholder="Abre o crea una transcripción y pulsa ● Grabar. Puedes editar el texto mientras se transcribe — con formato markdown en vivo: # Título, **negrita**, _cursiva_…"></textarea>
+    </div>
+    <div id="statusbar">
+      <span id="save-state">—</span>
+      <span class="spacer"></span>
+      <span id="word-count"></span>
+    </div>
+  </main>
+
+  <div id="modal" class="hidden">
+    <div id="modal-box">
+      <p id="modal-msg"></p>
+      <input id="modal-input" class="hidden" spellcheck="false">
+      <div id="modal-actions">
+        <button id="modal-cancel">Cancelar</button>
+        <button id="modal-ok" class="primary">Aceptar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/vendor/codemirror.min.js"></script>
+  <script src="/static/vendor/markdown.min.js"></script>
+  <script src="/static/vendor/placeholder.min.js"></script>
+  <script src="/static/app.js"></script>
+</body>
+</html>

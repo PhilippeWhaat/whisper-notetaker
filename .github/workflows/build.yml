@@ -1,0 +1,62 @@
+name: Build ejecutables
+
+# Se ejecuta al crear un tag v* (p. ej. v1.0.0) o manualmente desde la
+# pestaña Actions de GitHub. Produce los tres ejecutables descargables.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            name: NoteTaker-macOS-AppleSilicon
+          - os: macos-13
+            name: NoteTaker-macOS-Intel
+          - os: windows-latest
+            name: NoteTaker-Windows
+          - os: ubuntu-latest
+            name: NoteTaker-Linux
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt pyinstaller
+
+      - name: Construir
+        run: pyinstaller notetaker.spec --noconfirm
+
+      - name: Firmar y comprimir (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          xattr -cr "dist/Note Taker.app"
+          codesign --force --deep --sign - "dist/Note Taker.app"
+          ditto -c -k --keepParent "dist/Note Taker.app" "${{ matrix.name }}.zip"
+
+      - name: Comprimir (Windows)
+        if: runner.os == 'Windows'
+        run: Compress-Archive -Path "dist/Note Taker" -DestinationPath "${{ matrix.name }}.zip"
+
+      - name: Comprimir (Linux)
+        if: runner.os == 'Linux'
+        run: cd dist && zip -qr "../${{ matrix.name }}.zip" "Note Taker"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.name }}
+          path: ${{ matrix.name }}.zip
+
+      - name: Publicar en el release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ matrix.name }}.zip
