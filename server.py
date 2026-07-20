@@ -422,7 +422,8 @@ def _donation_cfg() -> dict:
 def _region_configured(cfg: dict, region: str) -> bool:
     if region == "mx":
         return any(o.get("url") for o in cfg.get("mx", {}).get("options", []))
-    return bool(cfg.get("intl", {}).get("url"))
+    intl = cfg.get("intl", {})
+    return bool(intl.get("paypal_me") or intl.get("kofi"))
 
 
 @app.get("/api/donation/config")
@@ -440,8 +441,18 @@ async def donation_config(region: str = "intl"):
             "amounts": [o["amount"] for o in options],
             "signature": signature,
         }
+    intl = cfg.get("intl", {})
+    if intl.get("paypal_me"):
+        # PayPal.me permite prefijar el monto → botones como en México.
+        return {
+            "configured": True,
+            "mode": "amounts",
+            "currency_symbol": intl.get("currency_symbol", "$"),
+            "amounts": intl.get("amounts", []),
+            "signature": signature,
+        }
     return {
-        "configured": bool(cfg.get("intl", {}).get("url")),
+        "configured": bool(intl.get("kofi")),
         "mode": "kofi",
         "signature": signature,
     }
@@ -480,7 +491,13 @@ async def donation_go(body: DonateBody):
                 url = opt["url"]
                 break
     else:
-        url = cfg.get("intl", {}).get("url") or None
+        intl = cfg.get("intl", {})
+        if intl.get("paypal_me"):
+            base = f"https://www.paypal.com/paypalme/{intl['paypal_me']}"
+            code = intl.get("currency_code", "")
+            url = f"{base}/{body.amount}{code}" if body.amount else base
+        else:
+            url = intl.get("kofi") or None
     if not url:
         raise HTTPException(400, "Las donaciones aún no están configuradas")
     if not os.environ.get("NOTETAKER_NO_BROWSER_OPEN"):

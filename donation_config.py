@@ -26,8 +26,15 @@ DONATION = {
         ],
     },
 
-    # Resto del mundo: Ko-fi (el donante elige el monto en la página).
+    # Resto del mundo: PayPal.me con montos prefijados en la URL
+    # (https://paypal.me/<usuario>/<monto><moneda>, p. ej. .../10USD).
+    # Si "paypal_me" está vacío, se usa "kofi" (un solo botón, el donante
+    # elige el monto en Ko-fi).
     "intl": {
-        "url": "https://ko-fi.com/philippeprince",
+        "currency_symbol": "$",
+        "currency_code": "USD",
+        "amounts": [5, 10, 20],
+        "paypal_me": "philippetritto",
+        "kofi": "https://ko-fi.com/philippeprince",
     },
 }
