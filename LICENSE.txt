@@ -1,0 +1,76 @@
+CONTRATO DE LICENCIA DE USUARIO FINAL (EULA) — Note Taker
+==========================================================
+
+Copyright (c) 2026 Philippe Prince. Todos los derechos reservados.
+
+Este software ("Note Taker", el "Software") es un producto propietario. No es
+software libre ni de código abierto. Al instalar, activar o usar el Software,
+usted ("el Licenciatario") acepta los términos de este contrato.
+
+
+1. CONCESIÓN DE LICENCIA
+   Tras el pago único correspondiente, se le concede una licencia personal,
+   mundial, no exclusiva e intransferible para instalar y usar el Software de
+   por vida, incluyendo todas las actualizaciones futuras de la misma línea de
+   producto. La licencia ampara el uso por una (1) persona, en los dispositivos
+   personales o de trabajo que dicha persona utilice.
+
+2. RESTRICCIONES
+   Salvo autorización expresa por escrito del titular del copyright, usted no
+   podrá:
+   (a) revender, alquilar, sublicenciar, prestar ni redistribuir el Software o
+       su clave de licencia a terceros;
+   (b) publicar el Software o su clave de licencia en repositorios, foros o
+       cualquier medio de acceso público;
+   (c) hacerse pasar por el autor ni retirar los avisos de copyright.
+   El uso del Software dentro de una organización requiere una licencia por
+   cada persona usuaria.
+
+3. PRIVACIDAD (compromiso del producto)
+   El Software procesa todo el audio y las transcripciones de forma 100% local
+   en el dispositivo del Licenciatario. El Software NO transmite audio,
+   transcripciones ni datos personales a ningún servidor. La verificación de la
+   clave de licencia también se realiza sin conexión, sin contactar a ningún
+   servidor. El autor no recopila datos de uso.
+
+4. COMPONENTES DE TERCEROS
+   El Software incorpora bibliotecas de código abierto de terceros, cada una
+   sujeta a su propia licencia (MIT, BSD, Apache 2.0). El listado y los avisos
+   correspondientes se encuentran en el archivo THIRD_PARTY_NOTICES.md. Nada en
+   este contrato limita los derechos que dichas licencias le otorgan sobre esos
+   componentes por separado.
+
+5. SIN GARANTÍA
+   EL SOFTWARE SE PROPORCIONA "TAL CUAL", SIN GARANTÍA DE NINGÚN TIPO, EXPRESA O
+   IMPLÍCITA, INCLUYENDO PERO SIN LIMITARSE A GARANTÍAS DE COMERCIABILIDAD,
+   IDONEIDAD PARA UN FIN PARTICULAR Y NO INFRACCIÓN. El Licenciatario asume todo
+   el riesgo derivado del uso del Software. La exactitud de las transcripciones
+   automáticas no está garantizada.
+
+6. LIMITACIÓN DE RESPONSABILIDAD
+   EN NINGÚN CASO EL AUTOR SERÁ RESPONSABLE POR DAÑOS INDIRECTOS, INCIDENTALES,
+   ESPECIALES O CONSECUENTES (INCLUIDA LA PÉRDIDA DE DATOS O DE BENEFICIOS)
+   DERIVADOS DEL USO O LA IMPOSIBILIDAD DE USO DEL SOFTWARE. La responsabilidad
+   total del autor no excederá el importe pagado por la licencia.
+
+7. REEMBOLSOS
+   Al tratarse de un producto digital descargable, los reembolsos se rigen por
+   la política publicada en el punto de venta en el momento de la compra.
+
+8. TERMINACIÓN
+   Esta licencia se extingue automáticamente si el Licenciatario incumple sus
+   términos. Al terminar, el Licenciatario debe dejar de usar y eliminar el
+   Software. Las transcripciones creadas por el Licenciatario le pertenecen y no
+   se ven afectadas.
+
+9. LEY APLICABLE
+   Este contrato se rige por las leyes aplicables en el domicilio del autor,
+   sin perjuicio de los derechos irrenunciables que la legislación de consumo
+   del país del Licenciatario le reconozca.
+
+Contacto: philippe.tritto@gmail.com
+
+--------------------------------------------------------------------------------
+Nota: Esta es una plantilla de EULA razonable para un producto de bajo precio;
+no constituye asesoramiento legal. Para un uso comercial de mayor escala,
+conviene que un abogado la revise según su jurisdicción.
