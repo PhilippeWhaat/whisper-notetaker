@@ -32,6 +32,7 @@ let recording = false;
 let busy = false; // quedan chunks por transcribir tras detener
 let saveTimer = null;
 let ws = null;
+let dirty = false; // ¿hay cambios del usuario sin guardar?
 
 // -------------------------------------------------------------- diálogo
 // Diálogo propio: confirm()/prompt() nativos no son fiables en el webview
@@ -125,6 +126,92 @@ async function refreshFiles() {
     li.addEventListener("click", () => openFile(f.name));
     fileList.appendChild(li);
   }
+  loadTrash();
+}
+
+// -------------------------------------------------------------- papelera
+const trashSection = $("#trash");
+const trashList = $("#trash-list");
+let trashOpen = false;
+
+const ICON_RESTORE = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-2"/></svg>';
+const ICON_FOREVER = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-12"/></svg>';
+
+async function loadTrash() {
+  let items = [];
+  try { items = (await api("trash")).items; } catch (e) { return; }
+  trashSection.classList.toggle("hidden", items.length === 0);
+  $("#trash-count").textContent = items.length ? `(${items.length})` : "";
+  if (!items.length) {
+    trashOpen = false;
+    trashSection.classList.remove("open");
+    trashList.classList.add("hidden");
+    return;
+  }
+  trashList.innerHTML = "";
+  for (const it of items) {
+    const li = document.createElement("li");
+    const name = document.createElement("span");
+    name.className = "tname";
+    name.textContent = it.display;
+    name.title = it.display;
+    const restore = document.createElement("button");
+    restore.className = "t-restore";
+    restore.innerHTML = ICON_RESTORE;
+    restore.title = t("trash_restore");
+    restore.addEventListener("click", () => restoreTrash(it.file));
+    const forever = document.createElement("button");
+    forever.className = "t-forever";
+    forever.innerHTML = ICON_FOREVER;
+    forever.title = t("trash_delete_forever");
+    forever.addEventListener("click", () => deleteForever(it.file, it.display));
+    li.append(name, restore, forever);
+    trashList.appendChild(li);
+  }
+  const row = document.createElement("li");
+  row.id = "trash-empty-row";
+  const empty = document.createElement("button");
+  empty.id = "trash-empty";
+  empty.textContent = t("trash_empty");
+  empty.addEventListener("click", () => emptyTrash(items.length));
+  row.appendChild(empty);
+  trashList.appendChild(row);
+}
+
+function toggleTrash() {
+  trashOpen = !trashOpen;
+  trashSection.classList.toggle("open", trashOpen);
+  trashList.classList.toggle("hidden", !trashOpen);
+}
+
+async function restoreTrash(file) {
+  try { await api("trash/restore", { file }); }
+  catch (err) { await alertModal(err.message); return; }
+  refreshFiles();
+}
+
+async function deleteForever(file, display) {
+  const ok = await askModal({
+    message: t("trash_delete_confirm", { name: display }),
+    okLabel: t("trash_delete_forever"),
+    danger: true,
+  });
+  if (!ok) return;
+  try { await api("trash/delete", { file }); }
+  catch (err) { await alertModal(err.message); return; }
+  loadTrash();
+}
+
+async function emptyTrash(n) {
+  const ok = await askModal({
+    message: t("trash_empty_confirm", { n }),
+    okLabel: t("trash_empty"),
+    danger: true,
+  });
+  if (!ok) return;
+  try { await api("trash/empty", {}); }
+  catch (err) { await alertModal(err.message); return; }
+  loadTrash();
 }
 
 function markActive() {
@@ -143,6 +230,7 @@ async function openFile(name) {
     const data = await api("open", { name: name || null });
     currentFile = data.name;
     cm.setValue(data.text);
+    dirty = false;
     cm.setOption("readOnly", false);
     btnRecord.disabled = false;
     fileNameEl.textContent = data.name.replace(/\.md$/, "");
@@ -188,6 +276,7 @@ async function deleteFile(name) {
     if (name === currentFile) {
       // El archivo abierto ya no existe: se cierra el editor sin tocar nada más.
       currentFile = null;
+      dirty = false;
       clearTimeout(saveTimer);
       saveTimer = null;
       cm.setValue("");
@@ -228,8 +317,12 @@ async function flushSave() {
   clearTimeout(saveTimer);
   saveTimer = null;
   if (!currentFile) return;
+  // Sin cambios del usuario → no reescribir (evita bumpear la fecha de
+  // modificación y reordenar el archivo en la lista sin motivo).
+  if (!dirty) return;
   try {
     await api("save", { name: currentFile, text: cm.getValue() });
+    dirty = false;
     setSaveState("saved");
   } catch (err) {
     saveState.textContent = t("save_error");
@@ -373,6 +466,7 @@ cm.on("change", (_cm, change) => {
   // Solo guardar por acciones del usuario: los "append" ya los guardó el
   // servidor y "setValue" es la carga inicial del archivo.
   if (change.origin && change.origin !== "setValue" && change.origin !== "append") {
+    dirty = true;
     scheduleSave();
   }
 });
@@ -482,13 +576,27 @@ async function donate(amount) {
 
 async function maybePromptDonation() {
   if (!donationCfg.configured) return;
+  // Mostrar como máximo una vez por apertura de la app. sessionStorage se
+  // conserva entre recargas (p. ej. al cambiar de idioma) pero se borra al
+  // cerrar la ventana → no reaparece en cada cambio de idioma.
+  try { if (sessionStorage.getItem("donationPromptShown")) return; } catch (e) {}
   try {
     const { should_prompt } = await api("donation/state?region=" + donationRegion);
-    if (should_prompt) setTimeout(() => openDonate("prompt"), 1500);
+    if (should_prompt) {
+      try { sessionStorage.setItem("donationPromptShown", "1"); } catch (e) {}
+      setTimeout(() => openDonate("prompt"), 1500);
+    }
   } catch (e) {}
 }
 
-$("#btn-coffee").addEventListener("click", () => openDonate("manual"));
+// Ko-fi es un solo enlace: el botón de café abre Ko-fi directamente (sin un
+// modal intermedio que solo repetiría "Apoyar en Ko-fi"). Con montos
+// (MercadoPago) sí se abre el selector.
+$("#btn-coffee").addEventListener("click", () => {
+  if (donationCfg.configured && donationCfg.mode === "kofi") donate(null);
+  else openDonate("manual");
+});
+$("#trash-toggle").addEventListener("click", toggleTrash);
 $("#donate-x").addEventListener("click", closeDonate);
 $("#donate-later").addEventListener("click", closeDonate);
 $("#donate").addEventListener("click", (e) => { if (e.target.id === "donate") closeDonate(); });

@@ -271,6 +271,80 @@ async def delete(body: DeleteBody):
     return {"ok": True, "trashed_to": f"Papelera/{dest.name}"}
 
 
+_TRASH_STAMP = re.compile(r"^\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2} (\(\d+\) )?")
+
+
+def _trash_path(fname: str) -> Path:
+    """Ruta segura dentro de Papelera/ (rechaza cualquier cosa fuera)."""
+    fname = os.path.basename(fname)
+    path = (TRASH_DIR / fname).resolve()
+    if path.parent != TRASH_DIR.resolve() or path.suffix != ".md":
+        raise HTTPException(400, "Ruta no permitida")
+    return path
+
+
+@app.get("/api/trash")
+async def trash_list():
+    items = []
+    if TRASH_DIR.exists():
+        for path in TRASH_DIR.glob("*.md"):
+            stat = path.stat()
+            display = _TRASH_STAMP.sub("", path.name).replace(".md", "")
+            items.append({"file": path.name, "display": display, "mtime": stat.st_mtime})
+    items.sort(key=lambda i: i["mtime"], reverse=True)
+    return {"items": items}
+
+
+class TrashFileBody(BaseModel):
+    file: str
+
+
+@app.post("/api/trash/restore")
+async def trash_restore(body: TrashFileBody):
+    src = _trash_path(body.file)
+    if not src.is_file():
+        raise HTTPException(404, "El archivo no existe en la papelera")
+    # Recuperar el nombre original (sin el sello de fecha del borrado).
+    original = _TRASH_STAMP.sub("", src.name) or src.name
+    dest = NOTES_DIR / original
+    counter = 1
+    while dest.exists():
+        counter += 1
+        dest = NOTES_DIR / f"{original[:-3]} ({counter}).md"
+    try:
+        os.replace(src, dest)
+    except Exception as exc:
+        raise HTTPException(500, f"No se pudo restaurar: {exc}")
+    return {"ok": True, "name": dest.name}
+
+
+@app.post("/api/trash/delete")
+async def trash_delete(body: TrashFileBody):
+    """Borrado DEFINITIVO de un archivo de la papelera (esto sí libera espacio)."""
+    path = _trash_path(body.file)
+    if not path.is_file():
+        raise HTTPException(404, "El archivo no existe en la papelera")
+    try:
+        path.unlink()
+    except Exception as exc:
+        raise HTTPException(500, f"No se pudo eliminar: {exc}")
+    return {"ok": True}
+
+
+@app.post("/api/trash/empty")
+async def trash_empty():
+    """Vacía la papelera: borrado definitivo de todo su contenido."""
+    removed = 0
+    if TRASH_DIR.exists():
+        for path in TRASH_DIR.glob("*.md"):
+            try:
+                path.unlink()
+                removed += 1
+            except Exception:
+                pass
+    return {"ok": True, "removed": removed}
+
+
 class StartBody(BaseModel):
     name: str
     model: str = "medium"

@@ -35,6 +35,12 @@
       rename_ok: "Renombrar",
       delete_confirm: '¿Mover "{name}" a la papelera? Se conservará en una subcarpeta y podrá recuperarlo cuando quiera.',
       delete_ok: "Mover a la papelera",
+      trash_title: "Papelera",
+      trash_restore: "Restaurar",
+      trash_delete_forever: "Eliminar definitivamente",
+      trash_empty: "Vaciar papelera",
+      trash_delete_confirm: '¿Eliminar "{name}" definitivamente? Esta acción no se puede deshacer.',
+      trash_empty_confirm: "¿Vaciar la papelera? Se eliminarán {n} elemento(s) de forma permanente y no se podrán recuperar.",
       saving: "Guardando…",
       saved: "Guardado",
       save_error: "Error al guardar",
@@ -87,6 +93,12 @@
       rename_ok: "Rename",
       delete_confirm: 'Move "{name}" to the trash? It will be kept in a subfolder and you can restore it anytime.',
       delete_ok: "Move to trash",
+      trash_title: "Trash",
+      trash_restore: "Restore",
+      trash_delete_forever: "Delete permanently",
+      trash_empty: "Empty trash",
+      trash_delete_confirm: 'Permanently delete "{name}"? This cannot be undone.',
+      trash_empty_confirm: "Empty the trash? {n} item(s) will be permanently deleted and cannot be recovered.",
       saving: "Saving…",
       saved: "Saved",
       save_error: "Save error",
@@ -139,6 +151,12 @@
       rename_ok: "Renommer",
       delete_confirm: 'Mettre « {name} » à la corbeille ? Le fichier sera conservé dans un sous-dossier et vous pourrez le récupérer à tout moment.',
       delete_ok: "Mettre à la corbeille",
+      trash_title: "Corbeille",
+      trash_restore: "Restaurer",
+      trash_delete_forever: "Supprimer définitivement",
+      trash_empty: "Vider la corbeille",
+      trash_delete_confirm: 'Supprimer « {name} » définitivement ? Cette action est irréversible.',
+      trash_empty_confirm: "Vider la corbeille ? {n} élément(s) seront supprimés définitivement et ne pourront pas être récupérés.",
       saving: "Enregistrement…",
       saved: "Enregistré",
       save_error: "Erreur d'enregistrement",
@@ -211,44 +229,154 @@
     root.querySelectorAll("[data-i18n-ph]").forEach((el) => { el.placeholder = t(el.getAttribute("data-i18n-ph")); });
   }
 
-  // Refrán absurdo generado al vuelo, en el idioma de la interfaz.
+  // Refranes absurdos (impersonales, sin tuteo). ~45 por idioma.
+  const PROVERBS = {
+    es: [
+      "No es que los relojes viejos siempre tengan razón, pero nunca llegan tarde a equivocarse.",
+      "Más vale un molino quieto que cien tormentas ensayando.",
+      "Cuando el eco se cansa, hasta las montañas bajan la voz.",
+      "Dicen que la niebla guarda secretos que ni el sol se atreve a leer.",
+      "Ningún caracol ha perdido un tren, y aun así todos llegan.",
+      "El sombrero que piensa demasiado termina volando.",
+      "A los cuervos puntuales nadie les cuenta chistes viejos.",
+      "Una cuchara paciente termina moviendo el océano.",
+      "No hay farol tan sabio que alumbre sus propios pies.",
+      "Los elefantes soñadores rara vez recuerdan por qué corren.",
+      "Quien discute con la lluvia acaba aprendiendo a nadar.",
+      "El tambor más honesto suena mejor cuando nadie lo escucha.",
+      "Dos espejos frente a frente nunca terminan la conversación.",
+      "Al barco distraído hasta el puerto le parece lejos.",
+      "La luna cobra en suspiros lo que presta en mareas.",
+      "Más vale no fiarse de un escarabajo que llega demasiado temprano.",
+      "El silencio de los peces ha ganado más discusiones que cualquier grito.",
+      "Un reloj roto tiene razón dos veces; uno terco, ninguna.",
+      "Las nubes tercas terminan lloviendo por costumbre.",
+      "Más enseña un caracol subiendo que un cohete cayendo.",
+      "A quien madruga, la niebla le presta el camino.",
+      "Ningún molino se queja del viento que lo hace bailar.",
+      "El gato filósofo duerme sobre las respuestas que nadie preguntó.",
+      "Una promesa mojada pesa más que una piedra seca.",
+      "Los faroles viejos alumbran mejor las historias que los caminos.",
+      "Cuando el tambor calla, hasta el eco se toma un descanso.",
+      "No hay tormenta que no termine pidiendo disculpas al mar.",
+      "El sombrero prestado siempre queda a la medida del apuro.",
+      "Un cuervo curioso vale por tres relojes puntuales.",
+      "La cuchara vacía hace más ruido que el plato lleno.",
+      "Al espejo apurado se le olvida a quién refleja.",
+      "Los caracoles no creen en los atajos, y rara vez se pierden.",
+      "Una vela encendida discute poco y alumbra mucho.",
+      "El viento no firma contratos, pero siempre cumple.",
+      "Más vale eco conocido que grito por estrenar.",
+      "Los relojes soñadores marcan la hora en que uno debería descansar.",
+      "Ningún barco aprendió a navegar quedándose en el puerto.",
+      "La niebla despistada a veces encuentra el mejor paisaje.",
+      "Un farol honesto confiesa que también le teme a la noche.",
+      "El caracol madrugador llega cuando la prisa ya se fue.",
+      "Dos tambores tercos nunca tocan la misma canción.",
+      "La luna distraída deja la marea a medio contar.",
+      "Quien le habla al molino termina entendiendo al viento.",
+      "El espejo paciente guarda todas las caras sin quejarse de ninguna.",
+      "No hay reloj que apure al café que aún no está listo.",
+    ],
+    en: [
+      "It's not that old clocks are always right, but they're never late to be wrong.",
+      "Better a still windmill than a hundred storms rehearsing.",
+      "When the echo grows tired, even mountains lower their voice.",
+      "They say the fog keeps secrets the sun dares not read.",
+      "No snail ever missed a train, and still they all arrive.",
+      "A hat that thinks too much ends up flying away.",
+      "Nobody tells old jokes to punctual crows.",
+      "A patient spoon can stir the whole ocean.",
+      "No lantern is wise enough to light its own feet.",
+      "Dreamy elephants rarely remember why they run.",
+      "Whoever argues with the rain learns to swim.",
+      "The most honest drum sounds best when no one listens.",
+      "Two mirrors face to face never finish the conversation.",
+      "To a distracted boat, even the harbor seems far.",
+      "The moon charges in sighs what it lends in tides.",
+      "Better not trust a beetle that arrives too early.",
+      "The silence of fish has won more arguments than any shout.",
+      "A broken clock is right twice; a stubborn one, never.",
+      "Stubborn clouds end up raining out of habit.",
+      "A rising snail teaches more than a falling rocket.",
+      "To the early riser, the fog lends the road.",
+      "No windmill complains about the wind that makes it dance.",
+      "The philosopher cat sleeps on answers no one asked for.",
+      "A wet promise weighs more than a dry stone.",
+      "Old lanterns light up stories better than roads.",
+      "When the drum falls silent, even the echo takes a break.",
+      "No storm ends without apologizing to the sea.",
+      "A borrowed hat always fits the size of the hurry.",
+      "One curious crow is worth three punctual clocks.",
+      "An empty spoon makes more noise than a full plate.",
+      "A hurried mirror forgets whom it reflects.",
+      "Snails don't believe in shortcuts, and rarely get lost.",
+      "A lit candle argues little and lights a lot.",
+      "The wind signs no contracts, yet always delivers.",
+      "Better a familiar echo than a brand-new shout.",
+      "Dreamy clocks mark the hour you should be resting.",
+      "No boat learned to sail by staying in port.",
+      "The absent-minded fog sometimes finds the best view.",
+      "An honest lantern admits it fears the night too.",
+      "The early snail arrives once the hurry has gone.",
+      "Two stubborn drums never play the same song.",
+      "The distracted moon leaves the tide half-counted.",
+      "Whoever talks to the windmill ends up understanding the wind.",
+      "A patient mirror keeps every face without complaining about any.",
+      "No clock can rush the coffee that isn't ready.",
+    ],
+    fr: [
+      "Ce n'est pas que les vieilles horloges aient toujours raison, mais elles ne sont jamais en retard pour se tromper.",
+      "Mieux vaut un moulin tranquille que cent tempêtes qui répètent.",
+      "Quand l'écho se fatigue, même les montagnes baissent la voix.",
+      "On dit que la brume garde des secrets que le soleil n'ose pas lire.",
+      "Aucun escargot n'a raté son train, et pourtant ils arrivent tous.",
+      "Un chapeau qui réfléchit trop finit par s'envoler.",
+      "Personne ne raconte de vieilles blagues aux corbeaux ponctuels.",
+      "Une cuillère patiente finit par remuer l'océan.",
+      "Aucune lanterne n'est assez sage pour éclairer ses propres pieds.",
+      "Les éléphants rêveurs se rappellent rarement pourquoi ils courent.",
+      "Qui discute avec la pluie apprend à nager.",
+      "Le tambour le plus honnête sonne mieux quand personne n'écoute.",
+      "Deux miroirs face à face ne finissent jamais la conversation.",
+      "Pour un bateau distrait, même le port semble loin.",
+      "La lune facture en soupirs ce qu'elle prête en marées.",
+      "Il ne faut jamais faire confiance à un scarabée qui arrive trop tôt.",
+      "Le silence des poissons a gagné plus de débats que n'importe quel cri.",
+      "Une horloge cassée a raison deux fois ; une horloge têtue, jamais.",
+      "Les nuages têtus finissent par pleuvoir par habitude.",
+      "Un escargot qui monte enseigne plus qu'une fusée qui tombe.",
+      "Au lève-tôt, la brume prête le chemin.",
+      "Aucun moulin ne se plaint du vent qui le fait danser.",
+      "Le chat philosophe dort sur les réponses que personne n'a demandées.",
+      "Une promesse mouillée pèse plus qu'une pierre sèche.",
+      "Les vieilles lanternes éclairent mieux les histoires que les chemins.",
+      "Quand le tambour se tait, même l'écho fait une pause.",
+      "Aucune tempête ne se termine sans s'excuser auprès de la mer.",
+      "Un chapeau emprunté est toujours à la taille de la hâte.",
+      "Un corbeau curieux en vaut trois horloges ponctuelles.",
+      "Une cuillère vide fait plus de bruit qu'une assiette pleine.",
+      "Un miroir pressé oublie qui il reflète.",
+      "Les escargots ne croient pas aux raccourcis, et se perdent rarement.",
+      "Une bougie allumée discute peu et éclaire beaucoup.",
+      "Le vent ne signe aucun contrat, mais tient toujours parole.",
+      "Mieux vaut un écho connu qu'un cri tout neuf.",
+      "Les horloges rêveuses indiquent l'heure où l'on devrait se reposer.",
+      "Aucun bateau n'a appris à naviguer en restant au port.",
+      "La brume distraite trouve parfois le plus beau paysage.",
+      "Une lanterne honnête avoue qu'elle craint aussi la nuit.",
+      "L'escargot matinal arrive quand la hâte est déjà partie.",
+      "Deux tambours têtus ne jouent jamais la même chanson.",
+      "La lune distraite laisse la marée à moitié comptée.",
+      "Qui parle au moulin finit par comprendre le vent.",
+      "Un miroir patient garde tous les visages sans se plaindre d'aucun.",
+      "Aucune horloge ne presse le café qui n'est pas prêt.",
+    ],
+  };
+
   function randomProverb() {
-    const pick = (a) => a[Math.floor(Math.random() * a.length)];
-    if (lang === "fr") {
-      const nP = ["chats", "moulins", "horloges", "corbeaux", "tambours", "lanternes", "chapeaux", "éléphants", "escargots", "miroirs"];
-      const aP = ["vieux", "sages", "endormis", "distraits", "têtus", "philosophes", "matinaux", "maladroits", "rêveurs", "curieux"];
-      const art = [{ a: "le ", n: "moulin" }, { a: "la ", n: "lune" }, { a: "l'", n: "horloge" }, { a: "la ", n: "tempête" }, { a: "l'", n: "écho" }, { a: "le ", n: "chapeau" }];
-      const st = ["de la patience", "un soupir", "de vieilles pièces", "de bonnes intentions", "du café froid", "des promesses", "un bon proverbe", "de la fumée"];
-      const o = pick(art);
-      return pick([
-        () => `On dit que ${o.a}${o.n} ne discute jamais avec les ${pick(nP)} ${pick(aP)}, et ce n'est pas pour rien.`,
-        () => `Quand les ${pick(nP)} ${pick(aP)} sifflent, ${o.a}${o.n} a déjà rangé ${pick(st)}.`,
-        () => `Ce n'est pas que les ${pick(nP)} ${pick(aP)} paient toujours ${o.a}${o.n} avec ${pick(st)}, mais ils ont peut-être raison.`,
-      ])();
-    }
-    if (lang === "en") {
-      const nP = ["cats", "windmills", "clocks", "crows", "drums", "lanterns", "hats", "elephants", "snails", "mirrors"];
-      const aP = ["old", "wise", "sleepy", "distracted", "stubborn", "philosophical", "early-rising", "clumsy", "dreamy", "curious"];
-      const n = ["windmill", "moon", "clock", "storm", "echo", "hat", "lantern"];
-      const st = ["patience", "a sigh", "old coins", "good intentions", "cold coffee", "promises", "a good proverb", "smoke"];
-      const one = pick(n);
-      return pick([
-        () => `They say the ${one} never argues with ${pick(aP)} ${pick(nP)}, and for good reason.`,
-        () => `When ${pick(aP)} ${pick(nP)} whistle, the ${one} has already hidden its ${pick(st)}.`,
-        () => `It's not that ${pick(aP)} ${pick(nP)} always pay for the ${one} with ${pick(st)}, but they may have a point.`,
-      ])();
-    }
-    // español
-    const nP = ["gatos", "molinos", "relojes", "cuervos", "tambores", "faroles", "sombreros", "elefantes", "escarabajos", "barcos", "caracoles", "espejos"];
-    const aP = ["viejos", "sabios", "dormidos", "distraídos", "tercos", "filósofos", "madrugadores", "despistados", "soñadores", "mojados", "puntuales", "curiosos"];
-    const art = [{ a: "el", n: "molino" }, { a: "la", n: "luna" }, { a: "el", n: "reloj" }, { a: "la", n: "tormenta" }, { a: "el", n: "eco" }, { a: "la", n: "niebla" }, { a: "el", n: "sombrero" }, { a: "la", n: "cuchara" }, { a: "el", n: "farol" }];
-    const st = ["paciencia", "un suspiro", "monedas viejas", "buenas intenciones", "café frío", "promesas", "un buen refrán", "humo", "cuentos", "silbidos"];
-    const o1 = pick(art), o2 = pick(art);
-    return pick([
-      () => `No es que los ${pick(nP)} ${pick(aP)} siempre se paguen ${o1.a} ${o1.n} con ${pick(st)}, pero algo de razón tendrán.`,
-      () => `Dicen que ${o1.a} ${o1.n} nunca discute con los ${pick(nP)} ${pick(aP)}, y por algo será.`,
-      () => `Cuando los ${pick(nP)} ${pick(aP)} silban, ${o2.a} ${o2.n} ya guardó ${pick(st)}.`,
-    ])();
+    const list = PROVERBS[lang] || PROVERBS.en;
+    return list[Math.floor(Math.random() * list.length)];
   }
 
   window.I18N = { lang, t, applyStatic, randomProverb, setLang, available: ["es", "en", "fr"] };
