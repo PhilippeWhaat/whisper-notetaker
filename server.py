@@ -6,6 +6,7 @@ import re
 import subprocess
 import sys
 import threading
+import webbrowser
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -32,6 +33,37 @@ NOTES_DIR.mkdir(parents=True, exist_ok=True)
 for _tmp in NOTES_DIR.glob("*.md.tmp"):
     _tmp.unlink(missing_ok=True)
 LANGUAGE = os.environ.get("WHISPER_LANGUAGE", "es")
+
+
+def _config_dir() -> Path:
+    """Carpeta de configuración por usuario (fuera de la carpeta de notas)."""
+    if sys.platform == "darwin":
+        base = Path.home() / "Library" / "Application Support"
+    elif sys.platform.startswith("win"):
+        base = Path(os.environ.get("APPDATA", str(Path.home())))
+    else:
+        base = Path(os.environ.get("XDG_CONFIG_HOME", str(Path.home() / ".config")))
+    path = base / "Note Taker"
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
+PREFS_PATH = _config_dir() / "prefs.json"
+_prefs_lock = threading.Lock()
+
+
+def load_prefs() -> dict:
+    try:
+        return json.loads(PREFS_PATH.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+def save_prefs(prefs: dict):
+    tmp = PREFS_PATH.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(prefs), encoding="utf-8")
+    os.replace(tmp, PREFS_PATH)
+
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
@@ -114,6 +146,10 @@ transcriber = Transcriber(on_segment=_on_segment, on_status=_on_status, language
 async def _startup():
     global _loop
     _loop = asyncio.get_running_loop()
+    with _prefs_lock:
+        prefs = load_prefs()
+        prefs["launches"] = int(prefs.get("launches", 0)) + 1
+        save_prefs(prefs)
 
 
 @app.get("/")
@@ -297,6 +333,83 @@ async def reveal():
             subprocess.Popen(["xdg-open", folder])
     except Exception as exc:
         raise HTTPException(500, str(exc))
+    return {"ok": True}
+
+
+# --------------------------------------------------------------- donaciones
+def _donation_cfg() -> dict:
+    try:
+        from donation_config import DONATION
+        return DONATION
+    except Exception:
+        return {"currency_symbol": "$", "options": [], "custom_url": ""}
+
+
+@app.get("/api/donation/config")
+async def donation_config():
+    cfg = _donation_cfg()
+    options = [o for o in cfg.get("options", []) if o.get("url")]
+    return {
+        "configured": bool(options) or bool(cfg.get("custom_url")),
+        "currency_symbol": cfg.get("currency_symbol", "$"),
+        "amounts": [o["amount"] for o in options],
+        "custom": bool(cfg.get("custom_url")),
+    }
+
+
+@app.get("/api/donation/state")
+async def donation_state():
+    """¿Mostrar el mensaje de donación? No en la 1.ª ejecución (buena primera
+    impresión), ni si ya se apoyó o se pidió no volver a mostrarlo, ni si no
+    hay enlaces configurados."""
+    cfg = _donation_cfg()
+    configured = any(o.get("url") for o in cfg.get("options", [])) or bool(cfg.get("custom_url"))
+    with _prefs_lock:
+        prefs = load_prefs()
+    should = (configured
+              and not prefs.get("dismissed")
+              and not prefs.get("supported")
+              and int(prefs.get("launches", 0)) >= 2)
+    return {"should_prompt": should}
+
+
+class DonateBody(BaseModel):
+    amount: Optional[int] = None
+
+
+@app.post("/api/donation/go")
+async def donation_go(body: DonateBody):
+    """Abre el enlace de MercadoPago del monto elegido en el navegador del
+    sistema. Marca 'supported' para no volver a insistir con el mensaje (el
+    botón de café sigue siempre visible). No se puede verificar el pago real."""
+    cfg = _donation_cfg()
+    url = None
+    for opt in cfg.get("options", []):
+        if opt.get("amount") == body.amount and opt.get("url"):
+            url = opt["url"]
+            break
+    if url is None:
+        url = cfg.get("custom_url") or None
+    if not url:
+        raise HTTPException(400, "Las donaciones aún no están configuradas")
+    with _prefs_lock:
+        prefs = load_prefs()
+        prefs["supported"] = True
+        save_prefs(prefs)
+    if not os.environ.get("NOTETAKER_NO_BROWSER_OPEN"):
+        try:
+            webbrowser.open(url)
+        except Exception as exc:
+            raise HTTPException(500, f"No se pudo abrir el navegador: {exc}")
+    return {"ok": True}
+
+
+@app.post("/api/donation/dismiss")
+async def donation_dismiss():
+    with _prefs_lock:
+        prefs = load_prefs()
+        prefs["dismissed"] = True
+        save_prefs(prefs)
     return {"ok": True}
 
 

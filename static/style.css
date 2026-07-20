@@ -238,3 +238,103 @@ button.record.on { background: var(--rec); border-color: var(--rec); color: #fff
   margin-top: 16px;
 }
 #modal-ok.danger { background: var(--rec); border-color: var(--rec); }
+
+/* ------------------------------------------------------- botón de café */
+#btn-coffee {
+  font-size: 12px;
+  color: var(--muted);
+  background: transparent;
+  border: 1px dashed var(--border);
+}
+#btn-coffee:hover:not(:disabled) {
+  color: #f0c674;
+  border-color: #f0c674;
+  filter: none;
+}
+
+/* --------------------------------------------------- modal de donación */
+#donate {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 60;
+}
+#donate.hidden { display: none; }
+#donate-box {
+  position: relative;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 24px;
+  width: min(460px, 92vw);
+  text-align: center;
+}
+#donate-x {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  padding: 2px 8px;
+  font-size: 18px;
+  color: var(--muted);
+  background: transparent;
+  border: none;
+}
+#donate-proverb {
+  font-size: 14.5px;
+  line-height: 1.55;
+  font-style: italic;
+  color: var(--text);
+  margin: 6px 12px 14px;
+}
+#donate-proverb.hidden { display: none; }
+#donate-ask { font-size: 13.5px; color: var(--muted); margin-bottom: 16px; }
+#donate-amounts {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+#donate-amounts button {
+  min-width: 74px;
+  font-weight: 600;
+  font-size: 15px;
+  padding: 12px 14px;
+  background: var(--panel-2);
+}
+#donate-amounts button:hover {
+  background: #f0c674;
+  border-color: #f0c674;
+  color: #1a1400;
+  filter: none;
+}
+#donate-amounts button.custom { font-weight: 500; color: var(--muted); }
+#donate-unconfig { font-size: 13px; color: var(--muted); margin-bottom: 12px; }
+#donate-unconfig.hidden { display: none; }
+#donate-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+}
+#donate-never {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted);
+  cursor: pointer;
+}
+#donate-never.hidden { display: none; }
+#donate-later {
+  font-size: 13px;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  margin-left: auto;
+}

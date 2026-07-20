@@ -20,6 +20,7 @@ for pkg in ("faster_whisper", "ctranslate2", "onnxruntime", "tokenizers", "huggi
 
 # uvicorn resuelve estos módulos dinámicamente.
 hiddenimports += [
+    "donation_config",
     "uvicorn.logging",
     "uvicorn.loops", "uvicorn.loops.auto", "uvicorn.loops.asyncio",
     "uvicorn.protocols", "uvicorn.protocols.http", "uvicorn.protocols.http.auto",

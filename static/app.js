@@ -366,6 +366,119 @@ cm.on("change", (_cm, change) => {
   }
 });
 
+// ------------------------------------------------------------ donaciones
+let donationCfg = { configured: false, currency_symbol: "$", amounts: [], custom: false };
+
+// Refrán absurdo generado al vuelo, distinto cada vez.
+function randomProverb() {
+  const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+  const nP = ["gatos", "molinos", "relojes", "cuervos", "tambores", "faroles",
+              "sombreros", "elefantes", "escarabajos", "barcos", "caracoles", "espejos"];
+  const aP = ["viejos", "sabios", "dormidos", "distraídos", "tercos", "filósofos",
+              "madrugadores", "despistados", "soñadores", "mojados", "puntuales", "curiosos"];
+  const conArt = [{ a: "el", n: "molino" }, { a: "la", n: "luna" }, { a: "el", n: "reloj" },
+                  { a: "la", n: "tormenta" }, { a: "el", n: "eco" }, { a: "la", n: "niebla" },
+                  { a: "el", n: "sombrero" }, { a: "la", n: "cuchara" }, { a: "el", n: "farol" }];
+  const conQue = ["paciencia", "un suspiro", "monedas viejas", "buenas intenciones",
+                  "café frío", "promesas", "un buen refrán", "humo", "cuentos", "silbidos"];
+  const o1 = pick(conArt), o2 = pick(conArt);
+  const templates = [
+    () => `No es que los ${pick(nP)} ${pick(aP)} siempre se paguen ${o1.a} ${o1.n} con ${pick(conQue)}, pero algo de razón tendrán.`,
+    () => `Dicen que ${o1.a} ${o1.n} nunca discute con los ${pick(nP)} ${pick(aP)}, y por algo será.`,
+    () => `Más vale ${o1.n} en mano que cien ${pick(nP)} ${pick(aP)} contando ${pick(conQue)}.`,
+    () => `Cuando los ${pick(nP)} ${pick(aP)} silban, ${o2.a} ${o2.n} ya guardó ${pick(conQue)}.`,
+    () => `No por mucho ${pick(nP.map(w => w.slice(0, -1)))} se llena ${o1.a} ${o1.n} de ${pick(conQue)}.`,
+  ];
+  return pick(templates)();
+}
+
+function renderAmounts() {
+  const wrap = $("#donate-amounts");
+  wrap.innerHTML = "";
+  const sym = donationCfg.currency_symbol || "$";
+  for (const amt of donationCfg.amounts) {
+    const b = document.createElement("button");
+    b.textContent = `${sym}${amt}`;
+    b.addEventListener("click", () => donate(amt));
+    wrap.appendChild(b);
+  }
+  if (donationCfg.custom) {
+    const b = document.createElement("button");
+    b.className = "custom";
+    b.textContent = "Otro monto";
+    b.addEventListener("click", () => donate(null));
+    wrap.appendChild(b);
+  }
+}
+
+async function loadDonationConfig() {
+  try {
+    donationCfg = await api("donation/config");
+  } catch (e) { donationCfg = { configured: false, amounts: [], custom: false }; }
+  renderAmounts();
+}
+
+// mode: "prompt" (mensaje periódico, con refrán y casilla) | "manual" (botón café)
+function openDonate(mode) {
+  const proverb = $("#donate-proverb");
+  const never = $("#donate-never");
+  const amounts = $("#donate-amounts");
+  const unconfig = $("#donate-unconfig");
+  $("#donate-never-cb").checked = false;
+
+  if (mode === "prompt") {
+    proverb.textContent = randomProverb();
+    proverb.classList.remove("hidden");
+    never.classList.remove("hidden");
+    $("#donate-ask").textContent = "Si esta pequeña herramienta te sirve, un aporte me ayuda muchísimo. ¡Gracias! 🙏";
+  } else {
+    proverb.classList.add("hidden");
+    never.classList.add("hidden");
+    $("#donate-ask").textContent = donationCfg.configured
+      ? "¡Gracias por considerarlo! Elige un monto:"
+      : "";
+  }
+
+  if (donationCfg.configured) {
+    amounts.classList.remove("hidden");
+    unconfig.classList.add("hidden");
+  } else {
+    amounts.classList.add("hidden");
+    unconfig.classList.remove("hidden");
+  }
+  $("#donate").classList.remove("hidden");
+}
+
+function closeDonate() {
+  if ($("#donate-never-cb").checked) {
+    api("donation/dismiss", {}).catch(() => {});
+  }
+  $("#donate").classList.add("hidden");
+}
+
+async function donate(amount) {
+  try {
+    await api("donation/go", { amount });
+  } catch (err) {
+    await askModal({ message: err.message, okLabel: "Entendido", cancel: false });
+    return;
+  }
+  $("#donate").classList.add("hidden");
+}
+
+async function maybePromptDonation() {
+  if (!donationCfg.configured) return;
+  try {
+    const { should_prompt } = await api("donation/state");
+    if (should_prompt) setTimeout(() => openDonate("prompt"), 1500);
+  } catch (e) {}
+}
+
+$("#btn-coffee").addEventListener("click", () => openDonate("manual"));
+$("#donate-x").addEventListener("click", closeDonate);
+$("#donate-later").addEventListener("click", closeDonate);
+$("#donate").addEventListener("click", (e) => { if (e.target.id === "donate") closeDonate(); });
+
 btnRecord.addEventListener("click", toggleRecord);
 $("#btn-new").addEventListener("click", () => openFile(null));
 $("#btn-folder").addEventListener("click", () => api("reveal", {}));
@@ -391,6 +504,7 @@ if (savedChunk) chunkSelect.value = savedChunk;
 connectWS();
 refreshFiles();
 loadDevices();
+loadDonationConfig().then(maybePromptDonation);
 // La carpeta puede cambiar desde fuera (Finder, otra app): la lista se
 // refresca sola periódicamente y al volver a la ventana.
 setInterval(refreshFiles, 8000);
