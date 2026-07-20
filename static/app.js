@@ -1,4 +1,9 @@
 const $ = (sel) => document.querySelector(sel);
+const t = window.I18N.t;
+
+// Aplicar traducciones a los textos estáticos y fijar el idioma del documento.
+document.documentElement.lang = window.I18N.lang;
+window.I18N.applyStatic();
 
 const fileList = $("#file-list");
 const fileNameEl = $("#file-name");
@@ -20,6 +25,7 @@ const cm = CodeMirror.fromTextArea($("#editor"), {
   autofocus: false,
   spellcheck: false,
 });
+cm.setOption("placeholder", t("editor_ph"));
 
 let currentFile = null;
 let recording = false;
@@ -31,13 +37,13 @@ let ws = null;
 // Diálogo propio: confirm()/prompt() nativos no son fiables en el webview
 // empaquetado. Devuelve false si se cancela; true (o el texto del input) si
 // se acepta.
-function askModal({ message, input = null, okLabel = "Aceptar", danger = false, cancel = true }) {
+function askModal({ message, input = null, okLabel = null, danger = false, cancel = true }) {
   const modal = $("#modal");
   const inputEl = $("#modal-input");
   const okBtn = $("#modal-ok");
   const cancelBtn = $("#modal-cancel");
   $("#modal-msg").textContent = message;
-  okBtn.textContent = okLabel;
+  okBtn.textContent = okLabel || t("accept");
   okBtn.classList.toggle("danger", danger);
   cancelBtn.style.display = cancel ? "" : "none";
   if (input !== null) {
@@ -65,6 +71,10 @@ function askModal({ message, input = null, okLabel = "Aceptar", danger = false, 
   });
 }
 
+function alertModal(message) {
+  return askModal({ message, okLabel: t("understood"), cancel: false });
+}
+
 // ------------------------------------------------------------------ API
 async function api(path, body) {
   const opts = body !== undefined
@@ -81,7 +91,7 @@ async function api(path, body) {
 
 // ------------------------------------------------------------- archivos
 function fmtDate(mtime) {
-  return new Date(mtime * 1000).toLocaleString("es", {
+  return new Date(mtime * 1000).toLocaleString(window.I18N.lang, {
     day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit",
   });
 }
@@ -92,7 +102,7 @@ async function refreshFiles() {
   if (!files.length) {
     const li = document.createElement("li");
     li.className = "empty";
-    li.textContent = "Aún no hay transcripciones.";
+    li.textContent = t("no_files");
     fileList.appendChild(li);
     return;
   }
@@ -109,7 +119,7 @@ async function refreshFiles() {
     const del = document.createElement("button");
     del.className = "fdel";
     del.textContent = "🗑";
-    del.title = "Enviar a la papelera";
+    del.title = t("delete_title");
     del.addEventListener("click", (e) => { e.stopPropagation(); deleteFile(f.name); });
     li.append(name, date, del);
     li.addEventListener("click", () => openFile(f.name));
@@ -125,7 +135,7 @@ function markActive() {
 
 async function openFile(name) {
   if (recording || busy) {
-    await askModal({ message: "Detén la grabación antes de cambiar de archivo.", okLabel: "Entendido", cancel: false });
+    await alertModal(t("stop_before_switch"));
     return;
   }
   await flushSave();
@@ -143,18 +153,18 @@ async function openFile(name) {
     cm.focus();
     cm.setCursor(cm.lineCount() - 1);
   } catch (err) {
-    await askModal({ message: err.message, okLabel: "Entendido", cancel: false });
+    await alertModal(err.message);
   }
 }
 
 async function renameFile() {
   if (!currentFile) return;
   if (recording || busy) {
-    await askModal({ message: "Detén la grabación antes de renombrar.", okLabel: "Entendido", cancel: false });
+    await alertModal(t("stop_before_rename"));
     return;
   }
   const base = currentFile.replace(/\.md$/, "");
-  const entered = await askModal({ message: "Nuevo nombre del archivo:", input: base, okLabel: "Renombrar" });
+  const entered = await askModal({ message: t("rename_prompt"), input: base, okLabel: t("rename_ok") });
   if (!entered || entered === base) return;
   try {
     const data = await api("rename", { old: currentFile, new: entered });
@@ -162,14 +172,14 @@ async function renameFile() {
     fileNameEl.textContent = data.name.replace(/\.md$/, "");
     refreshFiles();
   } catch (err) {
-    await askModal({ message: err.message, okLabel: "Entendido", cancel: false });
+    await alertModal(err.message);
   }
 }
 
 async function deleteFile(name) {
   const ok = await askModal({
-    message: `¿Mover "${name.replace(/\.md$/, "")}" a la papelera? Se conservará en la subcarpeta "Papelera" de tus transcripciones y podrás recuperarlo cuando quieras.`,
-    okLabel: "Mover a la papelera",
+    message: t("delete_confirm", { name: name.replace(/\.md$/, "") }),
+    okLabel: t("delete_ok"),
     danger: true,
   });
   if (!ok) return;
@@ -183,23 +193,23 @@ async function deleteFile(name) {
       cm.setValue("");
       cm.setOption("readOnly", "nocursor");
       btnRecord.disabled = true;
-      fileNameEl.textContent = "Sin archivo";
+      fileNameEl.textContent = t("no_file");
       setSaveState(null);
       updateWordCount();
     }
     refreshFiles();
   } catch (err) {
-    await askModal({ message: err.message, okLabel: "Entendido", cancel: false });
+    await alertModal(err.message);
   }
 }
 
 // ------------------------------------------------------------- guardado
 function setSaveState(state) {
   if (state === "saving") {
-    saveState.textContent = "Guardando…";
+    saveState.textContent = t("saving");
     saveState.className = "";
   } else if (state === "saved") {
-    saveState.textContent = "Guardado ✓";
+    saveState.textContent = t("saved");
     saveState.className = "saved";
   } else {
     saveState.textContent = "—";
@@ -222,14 +232,14 @@ async function flushSave() {
     await api("save", { name: currentFile, text: cm.getValue() });
     setSaveState("saved");
   } catch (err) {
-    saveState.textContent = "Error al guardar";
+    saveState.textContent = t("save_error");
   }
 }
 
 function updateWordCount() {
   const text = cm.getValue().trim();
   const words = text ? text.split(/\s+/).length : 0;
-  wordCount.textContent = `${words} palabras`;
+  wordCount.textContent = t("words", { n: words });
 }
 
 // ------------------------------------------------------------ grabación
@@ -237,7 +247,7 @@ async function toggleRecord() {
   if (recording) {
     btnRecord.disabled = true;
     try { await api("stop", {}); }
-    catch (err) { await askModal({ message: err.message, okLabel: "Entendido", cancel: false }); }
+    catch (err) { await alertModal(err.message); }
     btnRecord.disabled = false;
     return;
   }
@@ -258,7 +268,7 @@ async function toggleRecord() {
     localStorage.setItem("language", langSelect.value);
     localStorage.setItem("chunk", chunkSelect.value);
   } catch (err) {
-    await askModal({ message: err.message, okLabel: "Entendido", cancel: false });
+    await alertModal(err.message);
     setStatus({ state: "idle" });
   }
   btnRecord.disabled = false;
@@ -268,21 +278,21 @@ function setStatus(st) {
   switch (st.state) {
     case "recording":
       recording = true; busy = false;
-      statusPill.textContent = st.pending > 1 ? `● Grabando (${st.pending} en cola)` : "● Grabando";
+      statusPill.textContent = st.pending > 1 ? t("rec_queue", { n: st.pending }) : t("recording");
       statusPill.className = "pill recording";
       break;
     case "transcribing":
       recording = true; busy = false;
-      statusPill.textContent = "● Grabando · transcribiendo…";
+      statusPill.textContent = t("rec_transcribing");
       statusPill.className = "pill recording";
       break;
     case "loading_model":
-      statusPill.textContent = `Cargando modelo ${st.model}…`;
+      statusPill.textContent = t("loading_model", { model: st.model });
       statusPill.className = "pill busy";
       break;
     case "finishing":
       recording = false; busy = true;
-      statusPill.textContent = "Terminando transcripción…";
+      statusPill.textContent = t("finishing");
       statusPill.className = "pill busy";
       break;
     case "warning":
@@ -291,15 +301,15 @@ function setStatus(st) {
       return; // no cambia el botón
     case "error":
       recording = false; busy = false;
-      statusPill.textContent = st.message || "Error";
+      statusPill.textContent = st.message || t("error");
       statusPill.className = "pill error";
       break;
     default: // idle
       recording = false; busy = false;
-      statusPill.textContent = "Listo";
+      statusPill.textContent = t("status_idle");
       statusPill.className = "pill idle";
   }
-  btnRecord.textContent = recording ? "■ Detener" : "● Grabar";
+  btnRecord.textContent = recording ? "■ " + t("stop") : "● " + t("record");
   btnRecord.classList.toggle("on", recording);
 }
 
@@ -344,16 +354,20 @@ async function loadDevices() {
     deviceSelect.innerHTML = "";
     const def = document.createElement("option");
     def.value = "";
-    def.textContent = "Por defecto del sistema";
+    def.textContent = t("default_device");
     deviceSelect.appendChild(def);
     for (const d of devices) {
       const opt = document.createElement("option");
       opt.value = d.id;
-      opt.textContent = d.name + (d.default ? " (predeterminado)" : "");
+      opt.textContent = d.name + (d.default ? t("device_default_suffix") : "");
       deviceSelect.appendChild(opt);
     }
   } catch (err) {
-    deviceSelect.innerHTML = "<option value=''>Por defecto del sistema</option>";
+    deviceSelect.innerHTML = "";
+    const def = document.createElement("option");
+    def.value = "";
+    def.textContent = t("default_device");
+    deviceSelect.appendChild(def);
   }
 }
 
@@ -369,29 +383,6 @@ cm.on("change", (_cm, change) => {
 // ------------------------------------------------------------ donaciones
 let donationCfg = { configured: false, currency_symbol: "$", amounts: [], custom: false };
 
-// Refrán absurdo generado al vuelo, distinto cada vez.
-function randomProverb() {
-  const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
-  const nP = ["gatos", "molinos", "relojes", "cuervos", "tambores", "faroles",
-              "sombreros", "elefantes", "escarabajos", "barcos", "caracoles", "espejos"];
-  const aP = ["viejos", "sabios", "dormidos", "distraídos", "tercos", "filósofos",
-              "madrugadores", "despistados", "soñadores", "mojados", "puntuales", "curiosos"];
-  const conArt = [{ a: "el", n: "molino" }, { a: "la", n: "luna" }, { a: "el", n: "reloj" },
-                  { a: "la", n: "tormenta" }, { a: "el", n: "eco" }, { a: "la", n: "niebla" },
-                  { a: "el", n: "sombrero" }, { a: "la", n: "cuchara" }, { a: "el", n: "farol" }];
-  const conQue = ["paciencia", "un suspiro", "monedas viejas", "buenas intenciones",
-                  "café frío", "promesas", "un buen refrán", "humo", "cuentos", "silbidos"];
-  const o1 = pick(conArt), o2 = pick(conArt);
-  const templates = [
-    () => `No es que los ${pick(nP)} ${pick(aP)} siempre se paguen ${o1.a} ${o1.n} con ${pick(conQue)}, pero algo de razón tendrán.`,
-    () => `Dicen que ${o1.a} ${o1.n} nunca discute con los ${pick(nP)} ${pick(aP)}, y por algo será.`,
-    () => `Más vale ${o1.n} en mano que cien ${pick(nP)} ${pick(aP)} contando ${pick(conQue)}.`,
-    () => `Cuando los ${pick(nP)} ${pick(aP)} silban, ${o2.a} ${o2.n} ya guardó ${pick(conQue)}.`,
-    () => `No por mucho ${pick(nP.map(w => w.slice(0, -1)))} se llena ${o1.a} ${o1.n} de ${pick(conQue)}.`,
-  ];
-  return pick(templates)();
-}
-
 function renderAmounts() {
   const wrap = $("#donate-amounts");
   wrap.innerHTML = "";
@@ -405,7 +396,7 @@ function renderAmounts() {
   if (donationCfg.custom) {
     const b = document.createElement("button");
     b.className = "custom";
-    b.textContent = "Otro monto";
+    b.textContent = t("donate_other");
     b.addEventListener("click", () => donate(null));
     wrap.appendChild(b);
   }
@@ -427,16 +418,14 @@ function openDonate(mode) {
   $("#donate-never-cb").checked = false;
 
   if (mode === "prompt") {
-    proverb.textContent = randomProverb();
+    proverb.textContent = window.I18N.randomProverb();
     proverb.classList.remove("hidden");
     never.classList.remove("hidden");
-    $("#donate-ask").textContent = "Si esta pequeña herramienta te sirve, un aporte me ayuda muchísimo. ¡Gracias! 🙏";
+    $("#donate-ask").textContent = t("donate_ask_prompt");
   } else {
     proverb.classList.add("hidden");
     never.classList.add("hidden");
-    $("#donate-ask").textContent = donationCfg.configured
-      ? "¡Gracias por considerarlo! Elige un monto:"
-      : "";
+    $("#donate-ask").textContent = donationCfg.configured ? t("donate_ask_manual") : "";
   }
 
   if (donationCfg.configured) {
@@ -449,6 +438,9 @@ function openDonate(mode) {
   $("#donate").classList.remove("hidden");
 }
 
+// El mensaje solo deja de aparecer si la persona marca honestamente
+// "¡Ya doné!". Como no podemos verificar el pago, no lo ocultamos por el
+// simple hecho de haber pulsado un monto: la honestidad es del usuario.
 function closeDonate() {
   if ($("#donate-never-cb").checked) {
     api("donation/dismiss", {}).catch(() => {});
@@ -460,10 +452,10 @@ async function donate(amount) {
   try {
     await api("donation/go", { amount });
   } catch (err) {
-    await askModal({ message: err.message, okLabel: "Entendido", cancel: false });
+    await alertModal(err.message);
     return;
   }
-  $("#donate").classList.add("hidden");
+  closeDonate(); // respeta la casilla "¡Ya doné!" si estaba marcada
 }
 
 async function maybePromptDonation() {
@@ -496,10 +488,20 @@ window.addEventListener("beforeunload", () => {
 
 const savedModel = localStorage.getItem("model");
 if (savedModel) modelSelect.value = savedModel;
+// Idioma de transcripción: si el usuario nunca lo eligió, se ajusta al idioma
+// detectado de la interfaz (si es uno de los soportados por el selector).
 const savedLang = localStorage.getItem("language");
-if (savedLang) langSelect.value = savedLang;
+if (savedLang) {
+  langSelect.value = savedLang;
+} else if (["es", "en", "fr"].includes(window.I18N.lang)) {
+  langSelect.value = window.I18N.lang;
+}
 const savedChunk = localStorage.getItem("chunk");
 if (savedChunk) chunkSelect.value = savedChunk;
+
+// Estado inicial del botón de grabación y la píldora de estado.
+setStatus({ state: "idle" });
+btnRecord.disabled = true;
 
 connectWS();
 refreshFiles();

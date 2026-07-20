@@ -368,7 +368,6 @@ async def donation_state():
         prefs = load_prefs()
     should = (configured
               and not prefs.get("dismissed")
-              and not prefs.get("supported")
               and int(prefs.get("launches", 0)) >= 2)
     return {"should_prompt": should}
 
@@ -380,8 +379,9 @@ class DonateBody(BaseModel):
 @app.post("/api/donation/go")
 async def donation_go(body: DonateBody):
     """Abre el enlace de MercadoPago del monto elegido en el navegador del
-    sistema. Marca 'supported' para no volver a insistir con el mensaje (el
-    botón de café sigue siempre visible). No se puede verificar el pago real."""
+    sistema. NO oculta el mensaje: como no se puede verificar el pago, el
+    mensaje solo se silencia si la persona marca honestamente '¡Ya doné!'
+    (endpoint dismiss). El botón de café sigue siempre visible."""
     cfg = _donation_cfg()
     url = None
     for opt in cfg.get("options", []):
@@ -392,10 +392,6 @@ async def donation_go(body: DonateBody):
         url = cfg.get("custom_url") or None
     if not url:
         raise HTTPException(400, "Las donaciones aún no están configuradas")
-    with _prefs_lock:
-        prefs = load_prefs()
-        prefs["supported"] = True
-        save_prefs(prefs)
     if not os.environ.get("NOTETAKER_NO_BROWSER_OPEN"):
         try:
             webbrowser.open(url)

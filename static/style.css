@@ -241,11 +241,16 @@ button.record.on { background: var(--rec); border-color: var(--rec); color: #fff
 
 /* ------------------------------------------------------- botón de café */
 #btn-coffee {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
   font-size: 12px;
   color: var(--muted);
   background: transparent;
   border: 1px dashed var(--border);
 }
+#btn-coffee svg { flex: none; }
 #btn-coffee:hover:not(:disabled) {
   color: #f0c674;
   border-color: #f0c674;

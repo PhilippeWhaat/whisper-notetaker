@@ -12,26 +12,26 @@
   <aside id="sidebar">
     <header>
       <img id="logo" src="/static/logo.png" alt="Note Taker">
-      <button id="btn-new" class="primary">+ Nueva transcripción</button>
+      <button id="btn-new" class="primary" data-i18n="new_transcription">+ Nueva transcripción</button>
     </header>
     <ul id="file-list"></ul>
     <footer>
       <label class="field">
-        <span>Modelo</span>
+        <span data-i18n="model_label">Modelo</span>
         <select id="model-select">
-          <option value="tiny">tiny — muy rápido</option>
-          <option value="base">base — rápido</option>
-          <option value="small">small — rápido y preciso</option>
-          <option value="medium" selected>medium — recomendado</option>
+          <option value="tiny" data-i18n="model_tiny">tiny — muy rápido</option>
+          <option value="base" data-i18n="model_base">base — rápido</option>
+          <option value="small" data-i18n="model_small">small — rápido y preciso</option>
+          <option value="medium" selected data-i18n="model_medium">medium — recomendado</option>
         </select>
       </label>
       <label class="field">
-        <span>Micrófono</span>
+        <span data-i18n="mic_label">Micrófono</span>
         <select id="device-select"></select>
       </label>
       <div class="field-row">
         <label class="field">
-          <span>Idioma</span>
+          <span data-i18n="lang_label">Idioma</span>
           <select id="lang-select">
             <option value="es" selected>Español</option>
             <option value="en">English</option>
@@ -39,7 +39,7 @@
           </select>
         </label>
         <label class="field">
-          <span>Fragmentos</span>
+          <span data-i18n="chunk_label">Fragmentos</span>
           <select id="chunk-select">
             <option value="5">5 s</option>
             <option value="8">8 s</option>
@@ -49,21 +49,28 @@
           </select>
         </label>
       </div>
-      <button id="btn-folder">📁 Abrir carpeta</button>
-      <button id="btn-coffee" title="Apoya esta herramienta">☕ Invítame un café</button>
+      <button id="btn-folder" data-i18n="open_folder">📁 Abrir carpeta</button>
+      <button id="btn-coffee" data-i18n-title="coffee_title" title="Apoya esta herramienta">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor"
+             stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M5 8h11v6a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4V8Z"/>
+          <path d="M16 9h2.2a2.3 2.3 0 0 1 0 4.6H16"/>
+          <path d="M8 2.4c-.6.9.2 1.7-.2 2.7M11.5 2.4c-.6.9.2 1.7-.2 2.7"/>
+        </svg>
+        <span data-i18n="coffee">Invítame un café</span>
+      </button>
     </footer>
   </aside>
 
   <main id="main">
     <div id="toolbar">
-      <span id="file-name" title="Clic para renombrar">Sin archivo</span>
+      <span id="file-name" data-i18n-title="rename_hint" data-i18n="no_file" title="Clic para renombrar">Sin archivo</span>
       <span class="spacer"></span>
-      <span id="status-pill" class="pill idle">Listo</span>
+      <span id="status-pill" class="pill idle" data-i18n="status_idle">Listo</span>
       <button id="btn-record" class="record" disabled>● Grabar</button>
     </div>
     <div id="editor-wrap">
-      <textarea id="editor"
-        placeholder="Abre o crea una transcripción y pulsa ● Grabar. Puedes editar el texto mientras se transcribe — con formato markdown en vivo: # Título, **negrita**, _cursiva_…"></textarea>
+      <textarea id="editor"></textarea>
     </div>
     <div id="statusbar">
       <span id="save-state">—</span>
@@ -77,7 +84,7 @@
       <p id="modal-msg"></p>
       <input id="modal-input" class="hidden" spellcheck="false">
       <div id="modal-actions">
-        <button id="modal-cancel">Cancelar</button>
+        <button id="modal-cancel" data-i18n="cancel">Cancelar</button>
         <button id="modal-ok" class="primary">Aceptar</button>
       </div>
     </div>
@@ -85,18 +92,19 @@
 
   <div id="donate" class="hidden">
     <div id="donate-box">
-      <button id="donate-x" title="Cerrar">×</button>
+      <button id="donate-x" data-i18n-title="donate_close" title="Cerrar">×</button>
       <p id="donate-proverb"></p>
       <p id="donate-ask"></p>
       <div id="donate-amounts"></div>
-      <p id="donate-unconfig" class="hidden">Las donaciones aún no están disponibles.</p>
+      <p id="donate-unconfig" class="hidden" data-i18n="donate_unconfig">Las donaciones aún no están disponibles.</p>
       <div id="donate-foot">
-        <label id="donate-never"><input type="checkbox" id="donate-never-cb"> No volver a mostrar este mensaje</label>
-        <button id="donate-later">Ahora no</button>
+        <label id="donate-never"><input type="checkbox" id="donate-never-cb"> <span data-i18n="donate_already">¡Ya doné! No volver a mostrar</span></label>
+        <button id="donate-later" data-i18n="later">Ahora no</button>
       </div>
     </div>
   </div>
 
+  <script src="/static/i18n.js"></script>
   <script src="/static/vendor/codemirror.min.js"></script>
   <script src="/static/vendor/markdown.min.js"></script>
   <script src="/static/vendor/placeholder.min.js"></script>
