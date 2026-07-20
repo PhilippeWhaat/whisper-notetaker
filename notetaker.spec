@@ -31,12 +31,28 @@ hiddenimports += [
 
 icon = "logo/icon.icns" if sys.platform == "darwin" else "logo/icon.ico"
 
+runtime_hooks = []
+if sys.platform.startswith("linux"):
+    # Empaquetar la libportaudio del sistema (la rueda de sounddevice para
+    # Linux no la incluye) y redirigir su búsqueda en tiempo de ejecución.
+    runtime_hooks.append("rthook_portaudio.py")
+    import subprocess
+    try:
+        _ld = subprocess.run(["ldconfig", "-p"], capture_output=True, text=True).stdout
+        for _line in _ld.splitlines():
+            if "libportaudio.so.2" in _line and "=>" in _line:
+                binaries.append((_line.split("=>")[-1].strip(), "."))
+                break
+    except Exception:
+        pass
+
 a = Analysis(
     ["main.py"],
     pathex=[],
     binaries=binaries,
     datas=datas,
     hiddenimports=hiddenimports,
+    runtime_hooks=runtime_hooks,
     noarchive=False,
 )
 pyz = PYZ(a.pure)

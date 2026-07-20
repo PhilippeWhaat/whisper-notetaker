@@ -30,9 +30,11 @@ No hace falta instalar Python ni usar la terminal.
 - **Windows**: descarga `NoteTaker-Windows.zip`, descomprime la carpeta y haz
   doble clic en `Note Taker.exe` (dentro de la carpeta `Note Taker`).
 - **Linux**: descarga `NoteTaker-Linux.zip`, descomprime y doble clic en el
-  ejecutable `Note Taker`. Para la ventana nativa:
-  `sudo apt install gir1.2-webkit2-4.1 python3-gi` (si falta, se abre en el
-  navegador por defecto).
+  ejecutable `Note Taker` (si el gestor de archivos quitó el permiso de
+  ejecución al extraer: `chmod +x "Note Taker/Note Taker"`). Para la ventana
+  nativa: `sudo apt install gir1.2-webkit2-4.1 python3-gi` (si falta, se abre
+  en el navegador por defecto). Si el micrófono no funcionara:
+  `sudo apt install libportaudio2`.
 
 Las transcripciones se guardan en `Documentos/Note Taker/`.
 

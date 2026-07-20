@@ -7,6 +7,10 @@ on:
     tags: ["v*"]
   workflow_dispatch:
 
+# Necesario para que el workflow pueda crear el release y adjuntar los zips.
+permissions:
+  contents: write
+
 jobs:
   build:
     strategy:
@@ -28,6 +32,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
+      - name: Dependencias del sistema (Linux)
+        if: runner.os == 'Linux'
+        # PortAudio no viene incluido en la rueda de sounddevice para Linux;
+        # se instala aquí y el .spec lo empaqueta dentro del ejecutable.
+        run: sudo apt-get update && sudo apt-get install -y libportaudio2
 
       - name: Instalar dependencias
         run: pip install -r requirements.txt pyinstaller
