@@ -216,12 +216,15 @@ async def rename(body: RenameBody):
     if old == new:
         return {"name": new}
     src, dst = NOTES_DIR / old, NOTES_DIR / new
-    if not src.exists():
-        raise HTTPException(404, "El archivo original no existe")
     if dst.exists():
         raise HTTPException(409, "Ya existe un archivo con ese nombre")
-    src.rename(dst)
+    # Todo bajo _state_lock: así, si se está grabando, ningún segmento se
+    # escribe entre el renombrado del archivo y la actualización del estado
+    # (la escritura de segmentos usa el mismo lock). Permite renombrar en vivo.
     with _state_lock:
+        if not src.exists():
+            raise HTTPException(404, "El archivo original no existe")
+        src.rename(dst)
         if _state["name"] == old:
             _state["name"] = new
     return {"name": new}

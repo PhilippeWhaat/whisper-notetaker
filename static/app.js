@@ -247,13 +247,13 @@ async function openFile(name) {
 
 async function renameFile() {
   if (!currentFile) return;
-  if (recording || busy) {
-    await alertModal(t("stop_before_rename"));
-    return;
-  }
   const base = currentFile.replace(/\.md$/, "");
   const entered = await askModal({ message: t("rename_prompt"), input: base, okLabel: t("rename_ok") });
   if (!entered || entered === base) return;
+  // Persistir ediciones pendientes en el nombre actual antes de renombrar
+  // (se puede renombrar incluso durante la grabación: el servidor lo hace
+  // de forma atómica y los segmentos siguen yendo al archivo renombrado).
+  await flushSave();
   try {
     const data = await api("rename", { old: currentFile, new: entered });
     currentFile = data.name;
