@@ -419,87 +419,60 @@ def _donation_cfg() -> dict:
         return {}
 
 
-def _region_configured(cfg: dict, region: str) -> bool:
-    if region == "mx":
-        return any(o.get("url") for o in cfg.get("mx", {}).get("options", []))
-    intl = cfg.get("intl", {})
-    return bool(intl.get("paypal_me") or intl.get("kofi"))
+# Monedas aceptadas por PayPal.me (código ISO). El monto se prefija en la URL:
+# paypal.me/<usuario>/<monto><MONEDA>. PayPal convierte a la moneda de la cuenta.
+ALLOWED_CURRENCIES = {
+    "USD", "EUR", "GBP", "MXN", "CAD", "AUD", "BRL", "COP", "ARS", "CLP",
+    "CHF", "CNY", "JPY", "SEK", "NOK", "DKK", "PLN", "CZK", "HUF", "NZD",
+    "HKD", "SGD", "PHP", "THB", "TWD", "ILS",
+}
 
 
 @app.get("/api/donation/config")
-async def donation_config(region: str = "intl"):
-    """Perfil según región: 'mx' (MercadoPago, montos en pesos) o 'intl'
-    (Ko-fi, el donante elige el monto)."""
+async def donation_config():
     cfg = _donation_cfg()
-    signature = cfg.get("signature", "")
-    if region == "mx":
-        options = [o for o in cfg.get("mx", {}).get("options", []) if o.get("url")]
-        return {
-            "configured": bool(options),
-            "mode": "amounts",
-            "currency_symbol": cfg.get("mx", {}).get("currency_symbol", "$"),
-            "amounts": [o["amount"] for o in options],
-            "signature": signature,
-        }
-    intl = cfg.get("intl", {})
-    if intl.get("paypal_me"):
-        # PayPal.me permite prefijar el monto → botones como en México.
-        return {
-            "configured": True,
-            "mode": "amounts",
-            "currency_symbol": intl.get("currency_symbol", "$"),
-            "amounts": intl.get("amounts", []),
-            "signature": signature,
-        }
     return {
-        "configured": bool(intl.get("kofi")),
-        "mode": "kofi",
-        "signature": signature,
+        "configured": bool(cfg.get("paypal_me")),
+        "signature": cfg.get("signature", ""),
     }
 
 
 @app.get("/api/donation/state")
-async def donation_state(region: str = "intl"):
+async def donation_state():
     """¿Mostrar el mensaje de donación? No en la 1.ª ejecución (buena primera
     impresión), ni si ya se apoyó o se pidió no volver a mostrarlo, ni si no
-    hay enlaces configurados para la región."""
+    hay PayPal configurado."""
     cfg = _donation_cfg()
     with _prefs_lock:
         prefs = load_prefs()
-    should = (_region_configured(cfg, region)
+    should = (bool(cfg.get("paypal_me"))
               and not prefs.get("dismissed")
               and int(prefs.get("launches", 0)) >= 2)
     return {"should_prompt": should}
 
 
 class DonateBody(BaseModel):
-    region: str = "intl"
-    amount: Optional[int] = None
+    amount: float
+    currency: str = "USD"
 
 
 @app.post("/api/donation/go")
 async def donation_go(body: DonateBody):
-    """Abre el enlace de pago en el navegador del sistema (MercadoPago para
-    México según el monto; Ko-fi para el resto). NO oculta el mensaje: como
-    no se puede verificar el pago, el mensaje solo se silencia si la persona
-    marca honestamente '¡Ya doné!'. El botón de café sigue siempre visible."""
+    """Abre PayPal.me con el monto y la moneda elegidos en el navegador del
+    sistema. NO oculta el mensaje: como no se puede verificar el pago, solo se
+    silencia si la persona marca honestamente '¡Ya doné!'."""
     cfg = _donation_cfg()
-    url = None
-    if body.region == "mx":
-        for opt in cfg.get("mx", {}).get("options", []):
-            if opt.get("amount") == body.amount and opt.get("url"):
-                url = opt["url"]
-                break
-    else:
-        intl = cfg.get("intl", {})
-        if intl.get("paypal_me"):
-            base = f"https://www.paypal.com/paypalme/{intl['paypal_me']}"
-            code = intl.get("currency_code", "")
-            url = f"{base}/{body.amount}{code}" if body.amount else base
-        else:
-            url = intl.get("kofi") or None
-    if not url:
+    handle = cfg.get("paypal_me")
+    if not handle:
         raise HTTPException(400, "Las donaciones aún no están configuradas")
+    currency = (body.currency or "USD").upper()
+    if currency not in ALLOWED_CURRENCIES:
+        raise HTTPException(400, "Moneda no válida")
+    if not (0 < body.amount <= 1_000_000):
+        raise HTTPException(400, "Monto fuera de rango")
+    # Enteros sin decimales (5, no 5.0); con decimales solo si hacen falta.
+    amount = int(body.amount) if float(body.amount).is_integer() else round(body.amount, 2)
+    url = f"https://www.paypal.com/paypalme/{handle}/{amount}{currency}"
     if not os.environ.get("NOTETAKER_NO_BROWSER_OPEN"):
         try:
             webbrowser.open(url)

@@ -472,45 +472,98 @@ cm.on("change", (_cm, change) => {
 });
 
 // ------------------------------------------------------------ donaciones
-// Región de pago: México (sistema es-MX) usa MercadoPago en pesos; el resto
-// del mundo usa Ko-fi. Se puede forzar con ?region=mx|intl (pruebas).
-const donationRegion = (() => {
-  try {
-    const forced = new URLSearchParams(location.search).get("region");
-    if (forced === "mx" || forced === "intl") return forced;
-  } catch (e) {}
+// PayPal.me para todo el mundo. Montos redondeados por moneda, en la moneda
+// local del sistema, con selector para cambiarla (PayPal adapta el enlace).
+const CURRENCIES = {
+  USD: { symbol: "$", amounts: [5, 10, 20] },
+  EUR: { symbol: "€", amounts: [5, 10, 20] },
+  GBP: { symbol: "£", amounts: [5, 10, 20] },
+  MXN: { symbol: "$", amounts: [100, 200, 500] },
+  COP: { symbol: "$", amounts: [20000, 40000, 80000] },
+  ARS: { symbol: "$", amounts: [5000, 10000, 20000] },
+  CLP: { symbol: "$", amounts: [4000, 8000, 16000] },
+  BRL: { symbol: "R$", amounts: [25, 50, 100] },
+  CAD: { symbol: "$", amounts: [5, 10, 20] },
+  AUD: { symbol: "$", amounts: [5, 10, 20] },
+  CHF: { symbol: "Fr", amounts: [5, 10, 20] },
+  CNY: { symbol: "¥", amounts: [40, 80, 150] },
+  JPY: { symbol: "¥", amounts: [700, 1500, 3000] },
+};
+// Orden del selector.
+const CURRENCY_ORDER = ["USD", "EUR", "GBP", "MXN", "COP", "ARS", "CLP", "BRL", "CAD", "AUD", "CHF", "CNY", "JPY"];
+// Región del sistema (subetiqueta de país) → moneda.
+const REGION_CURRENCY = {
+  US: "USD", GB: "GBP", UK: "GBP", MX: "MXN", CO: "COP", AR: "ARS", CL: "CLP",
+  BR: "BRL", CA: "CAD", AU: "AUD", NZ: "AUD", CH: "CHF", CN: "CNY", TW: "CNY",
+  JP: "JPY",
+  ES: "EUR", FR: "EUR", DE: "EUR", IT: "EUR", PT: "EUR", BE: "EUR", NL: "EUR",
+  IE: "EUR", AT: "EUR", FI: "EUR", GR: "EUR", LU: "EUR",
+};
+// Idioma (cuando no hay país claro) → moneda.
+const LANG_CURRENCY = { en: "USD", es: "EUR", fr: "EUR", de: "EUR", it: "EUR", pt: "EUR", zh: "CNY", ja: "JPY" };
+
+function detectCurrency() {
   const locales = navigator.languages && navigator.languages.length
     ? navigator.languages : [navigator.language || ""];
-  return locales.some((l) => (l || "").toLowerCase().startsWith("es-mx")) ? "mx" : "intl";
-})();
+  for (const raw of locales) {
+    const parts = (raw || "").split("-");
+    if (parts[1]) {
+      const cur = REGION_CURRENCY[parts[1].toUpperCase()];
+      if (cur) return cur;
+    }
+  }
+  for (const raw of locales) {
+    const cur = LANG_CURRENCY[(raw || "").slice(0, 2).toLowerCase()];
+    if (cur) return cur;
+  }
+  return "USD";
+}
 
-let donationCfg = { configured: false, mode: "kofi", amounts: [], signature: "" };
+let donationCfg = { configured: false, signature: "" };
+let currency = (() => {
+  try {
+    const forced = new URLSearchParams(location.search).get("cur");
+    if (forced && CURRENCIES[forced.toUpperCase()]) return forced.toUpperCase();
+    const saved = localStorage.getItem("donationCurrency");
+    if (saved && CURRENCIES[saved]) return saved;
+  } catch (e) {}
+  const d = detectCurrency();
+  return CURRENCIES[d] ? d : "USD";
+})();
 
 function renderAmounts() {
   const wrap = $("#donate-amounts");
   wrap.innerHTML = "";
   if (!donationCfg.configured) return;
-  if (donationCfg.mode === "amounts") {
-    const sym = donationCfg.currency_symbol || "$";
-    for (const amt of donationCfg.amounts) {
-      const b = document.createElement("button");
-      b.textContent = `${sym}${amt}`;
-      b.addEventListener("click", () => donate(amt));
-      wrap.appendChild(b);
-    }
-  } else {
-    // Ko-fi: un solo botón; el donante elige el monto en la página de Ko-fi.
+  const cur = CURRENCIES[currency] || CURRENCIES.USD;
+  for (const amt of cur.amounts) {
     const b = document.createElement("button");
-    b.textContent = t("kofi_support");
-    b.addEventListener("click", () => donate(null));
+    b.textContent = `${cur.symbol}${amt.toLocaleString(window.I18N.lang)}`;
+    b.addEventListener("click", () => donate(amt));
     wrap.appendChild(b);
   }
+  // Selector de moneda.
+  const sel = $("#donate-currency");
+  if (sel.options.length === 0) {
+    for (const code of CURRENCY_ORDER) {
+      const opt = document.createElement("option");
+      opt.value = code;
+      opt.textContent = `${code} (${CURRENCIES[code].symbol})`;
+      sel.appendChild(opt);
+    }
+    sel.addEventListener("change", () => {
+      currency = sel.value;
+      try { localStorage.setItem("donationCurrency", currency); } catch (e) {}
+      renderAmounts();
+    });
+  }
+  sel.value = currency;
 }
 
 async function loadDonationConfig() {
   try {
-    donationCfg = await api("donation/config?region=" + donationRegion);
-  } catch (e) { donationCfg = { configured: false, mode: "kofi", amounts: [], signature: "" }; }
+    donationCfg = await api("donation/config");
+  } catch (e) { donationCfg = { configured: false, signature: "" }; }
   renderAmounts();
 }
 
@@ -520,13 +573,14 @@ function openDonate(mode) {
   const sign = $("#donate-sign");
   const never = $("#donate-never");
   const amounts = $("#donate-amounts");
+  const curRow = $("#donate-cur-row");
   const unconfig = $("#donate-unconfig");
   $("#donate-never-cb").checked = false;
+  renderAmounts();
 
   if (mode === "prompt") {
     proverb.textContent = window.I18N.randomProverb();
     proverb.classList.remove("hidden");
-    // Firma bajo el refrán (el mismo nombre que verá en el cobro).
     if (donationCfg.signature) {
       sign.textContent = "— " + donationCfg.signature;
       sign.classList.remove("hidden");
@@ -539,18 +593,12 @@ function openDonate(mode) {
     proverb.classList.add("hidden");
     sign.classList.add("hidden");
     never.classList.add("hidden");
-    if (!donationCfg.configured) $("#donate-ask").textContent = "";
-    else $("#donate-ask").textContent = donationCfg.mode === "amounts"
-      ? t("donate_ask_manual") : t("donate_ask_kofi");
+    $("#donate-ask").textContent = donationCfg.configured ? t("donate_ask_manual") : "";
   }
 
-  if (donationCfg.configured) {
-    amounts.classList.remove("hidden");
-    unconfig.classList.add("hidden");
-  } else {
-    amounts.classList.add("hidden");
-    unconfig.classList.remove("hidden");
-  }
+  amounts.classList.toggle("hidden", !donationCfg.configured);
+  curRow.classList.toggle("hidden", !donationCfg.configured);
+  unconfig.classList.toggle("hidden", donationCfg.configured);
   $("#donate").classList.remove("hidden");
 }
 
@@ -566,7 +614,7 @@ function closeDonate() {
 
 async function donate(amount) {
   try {
-    await api("donation/go", { region: donationRegion, amount });
+    await api("donation/go", { amount, currency });
   } catch (err) {
     await alertModal(err.message);
     return;
@@ -581,7 +629,7 @@ async function maybePromptDonation() {
   // cerrar la ventana → no reaparece en cada cambio de idioma.
   try { if (sessionStorage.getItem("donationPromptShown")) return; } catch (e) {}
   try {
-    const { should_prompt } = await api("donation/state?region=" + donationRegion);
+    const { should_prompt } = await api("donation/state");
     if (should_prompt) {
       try { sessionStorage.setItem("donationPromptShown", "1"); } catch (e) {}
       setTimeout(() => openDonate("prompt"), 1500);
@@ -589,13 +637,7 @@ async function maybePromptDonation() {
   } catch (e) {}
 }
 
-// Ko-fi es un solo enlace: el botón de café abre Ko-fi directamente (sin un
-// modal intermedio que solo repetiría "Apoyar en Ko-fi"). Con montos
-// (MercadoPago) sí se abre el selector.
-$("#btn-coffee").addEventListener("click", () => {
-  if (donationCfg.configured && donationCfg.mode === "kofi") donate(null);
-  else openDonate("manual");
-});
+$("#btn-coffee").addEventListener("click", () => openDonate("manual"));
 $("#trash-toggle").addEventListener("click", toggleTrash);
 $("#donate-x").addEventListener("click", closeDonate);
 $("#donate-later").addEventListener("click", closeDonate);

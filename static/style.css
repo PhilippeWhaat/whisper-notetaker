@@ -436,6 +436,25 @@ button.record.on { background: var(--rec); border-color: var(--rec); color: #fff
   filter: none;
 }
 #donate-amounts button.custom { font-weight: 500; color: var(--muted); }
+#donate-cur-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 18px;
+  font-size: 12px;
+  color: var(--muted);
+}
+#donate-cur-row.hidden { display: none; }
+#donate-currency {
+  font: inherit;
+  font-size: 12px;
+  color: var(--text);
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 8px;
+}
 #donate-unconfig { font-size: 13px; color: var(--muted); margin-bottom: 12px; }
 #donate-unconfig.hidden { display: none; }
 #donate-foot {

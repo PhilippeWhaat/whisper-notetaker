@@ -1,40 +1,19 @@
-"""Configuración de donaciones.
+"""Configuración de donaciones (PayPal.me).
 
-Dos perfiles según la región del sistema:
-- México (locale del sistema es-MX): MercadoPago, montos fijos en pesos.
-  Un "link de pago" por monto (creados en tu panel de MercadoPago).
-- Resto del mundo: Ko-fi. Ko-fi NO permite prefijar el monto por URL, así
-  que se muestra un solo botón y el donante elige la cantidad en Ko-fi
-  (puedes fijar montos sugeridos en el panel de Ko-fi).
+Todo el mundo usa PayPal: los botones muestran montos redondeados en la moneda
+local del sistema y abren https://paypal.me/<usuario>/<monto><MONEDA> (PayPal
+convierte a la moneda de tu cuenta). El usuario puede cambiar la moneda con el
+selector del propio mensaje.
 
-La firma aparece bajo el refrán del mensaje de apoyo (tu nombre, el mismo que
-ven en MercadoPago / Ko-fi).
+Solo hace falta tu usuario de PayPal.me aquí. Los montos y monedas sugeridos se
+definen en la interfaz (static/app.js → CURRENCIES). La firma aparece bajo el
+refrán del mensaje de apoyo.
 """
 
 SIGNATURE = "Philippe Prince Tritto"
+PAYPAL_ME = "philippetritto"
 
 DONATION = {
     "signature": SIGNATURE,
-
-    # México (sistema es-MX): MercadoPago en pesos.
-    "mx": {
-        "currency_symbol": "MX$",
-        "options": [
-            {"amount": 100, "url": "https://mpago.la/14cZKwB"},  # ~5 USD
-            {"amount": 200, "url": "https://mpago.la/1oKDjC9"},  # ~10 USD
-            {"amount": 400, "url": "https://mpago.la/24XgiDF"},  # ~20 USD
-        ],
-    },
-
-    # Resto del mundo: PayPal.me con montos prefijados en la URL
-    # (https://paypal.me/<usuario>/<monto><moneda>, p. ej. .../10USD).
-    # Si "paypal_me" está vacío, se usa "kofi" (un solo botón, el donante
-    # elige el monto en Ko-fi).
-    "intl": {
-        "currency_symbol": "$",
-        "currency_code": "USD",
-        "amounts": [5, 10, 20],
-        "paypal_me": "philippetritto",
-        "kofi": "https://ko-fi.com/philippeprince",
-    },
+    "paypal_me": PAYPAL_ME,
 }
