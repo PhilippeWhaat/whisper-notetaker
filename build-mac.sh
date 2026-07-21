@@ -15,7 +15,12 @@ codesign --force --deep --sign - "dist/Note Taker.app" || {
   xattr -cr "dist/Note Taker.app"
   codesign --force --deep --sign - "dist/Note Taker.app"
 }
-ditto -c -k --keepParent "dist/Note Taker.app" "dist/NoteTaker-macOS.zip"
+# DMG con acceso directo a Aplicaciones (arrastrar-a-Aplicaciones).
+# Directorio temporal con mktemp (se evita rm; -ov sobrescribe el DMG previo).
+DMGROOT="$(mktemp -d)"
+cp -R "dist/Note Taker.app" "$DMGROOT/"
+ln -s /Applications "$DMGROOT/Applications"
+hdiutil create -volname "Note Taker" -srcfolder "$DMGROOT" -ov -format UDZO "dist/NoteTaker-macOS.dmg"
 
 echo
-echo "✅ Listo: dist/Note Taker.app  (arrástralo a /Applications si quieres)"
+echo "✅ Listo: dist/NoteTaker-macOS.dmg  (ábrelo y arrastra la app a Aplicaciones)"

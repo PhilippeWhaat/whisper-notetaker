@@ -20,33 +20,40 @@ funciona igual en macOS, Windows y Linux.
 - **Poco consumo**: modelo cuantizado int8 en CPU, chunks descartados tras
   transcribirse, cola acotada en memoria.
 
-## Para usuarios: ejecutables de doble clic
+## Requisitos
 
-No hace falta instalar Python ni usar la terminal.
+- macOS 11+, Windows 10/11 (64 bits) o Linux reciente
+- 8 GB de RAM recomendado (4 GB mínimo, con el modelo `small`)
+- ~2 GB de espacio libre (incluye el modelo de transcripción)
+- Micrófono
+- Internet solo la primera vez (descarga del modelo); después, 100 % offline
 
-- **macOS**: descarga `NoteTaker-macOS.zip`, descomprime y arrastra
-  `Note Taker.app` a Aplicaciones. La primera vez, **clic derecho → Abrir**
-  (la app no está notarizada por Apple y macOS la bloquea con doble clic).
-- **Windows**: descarga `NoteTaker-Windows.zip`, descomprime la carpeta y haz
-  doble clic en `Note Taker.exe` (dentro de la carpeta `Note Taker`).
-- **Linux**: descarga `NoteTaker-Linux.zip`, descomprime y doble clic en el
-  ejecutable `Note Taker` (si el gestor de archivos quitó el permiso de
-  ejecución al extraer: `chmod +x "Note Taker/Note Taker"`). Para la ventana
-  nativa: `sudo apt install gir1.2-webkit2-4.1 python3-gi` (si falta, se abre
-  en el navegador por defecto). Si el micrófono no funcionara:
-  `sudo apt install libportaudio2`.
+## Para usuarios: instaladores
+
+No hace falta instalar Python ni usar la terminal. Descárgalo desde
+[note-taker.co](https://note-taker.co) o desde la página de
+[Releases](https://github.com/PhilippeWhaat/whisper-notetaker/releases/latest).
+
+- **macOS**: `NoteTaker-macOS-AppleSilicon.dmg` (o `-Intel.dmg` para Macs
+  anteriores a 2020). Ábrelo y **arrastra `Note Taker` a Aplicaciones**. La
+  primera vez, **clic derecho → Abrir** (la app no está notarizada por Apple).
+- **Windows**: `NoteTaker-Windows-Setup.exe`. Doble clic → siguiente → listo
+  (se instala por usuario, sin permisos de administrador). SmartScreen puede
+  avisar la primera vez: "Más información" → "Ejecutar de todas formas".
+- **Linux**: `NoteTaker-Linux-x86_64.AppImage`. Dale permiso de ejecución
+  (`chmod +x NoteTaker-*.AppImage` o clic derecho → Propiedades → Ejecutar) y
+  doble clic. Para la ventana nativa: `sudo apt install gir1.2-webkit2-4.1
+  python3-gi` (si falta, se abre en el navegador por defecto).
 
 Las transcripciones se guardan en `Documentos/Note Taker/`.
 
 ### Generar los ejecutables
 
-- En cada sistema: doble clic en `build-windows.bat` (Windows) o ejecutar
-  `./build-mac.sh` / `./build-linux.sh`. El resultado queda en `dist/`.
-  Cada sistema solo puede construir su propio ejecutable.
-- O automáticamente para los tres: sube el repo a GitHub y crea un tag
-  `v1.0.0` (o lanza el workflow desde la pestaña **Actions**) — el workflow
-  [.github/workflows/build.yml](.github/workflows/build.yml) construye y
-  publica los tres zips en un release.
+- La forma recomendada es GitHub Actions: crea un tag `vX.Y.Z` (o lanza el
+  workflow desde **Actions**) — [.github/workflows/build.yml](.github/workflows/build.yml)
+  construye y publica los cuatro instaladores (macOS Apple Silicon `.dmg`,
+  macOS Intel `.dmg`, Windows `.exe` con Inno Setup, Linux `.AppImage`).
+- En local, `./build-mac.sh` genera el `.dmg` de macOS en `dist/`.
 
 ## Para desarrollo: ejecutar desde el código
 
