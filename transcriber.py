@@ -39,6 +39,7 @@ class Transcriber:
         self.language = language
         self.model = None
         self.model_size = None
+        self.model_target = None
         self.recording = False
         self._busy = False
         self._lock = threading.Lock()
@@ -67,6 +68,7 @@ class Transcriber:
             self._step_samples = self._chunk_samples - int(SAMPLE_RATE * overlap)
             self.recording = True
 
+        self.model_target = model_size
         if self._worker is None or not self._worker.is_alive():
             self._worker = threading.Thread(target=self._worker_loop, daemon=True)
             self._worker.start()
@@ -88,6 +90,25 @@ class Transcriber:
                             "message": f"No se pudo abrir el micrófono: {exc}"})
             raise
         self.on_status({"state": "recording", "pending": self._q.qsize()})
+
+    # --------------------------------------------------- cambios en vivo
+    def set_language(self, language):
+        """Cambia el idioma en caliente; el siguiente chunk ya lo usa."""
+        if language:
+            self.language = language
+
+    def set_chunk_seconds(self, chunk_seconds):
+        """Cambia la duración de los chunks; aplica en el siguiente corte."""
+        overlap = min(OVERLAP_SECONDS, chunk_seconds / 4)
+        self._chunk_samples = int(SAMPLE_RATE * chunk_seconds)
+        self._step_samples = self._chunk_samples - int(SAMPLE_RATE * overlap)
+
+    def set_model(self, model_size):
+        """Encola el cambio de modelo; el worker lo carga y los chunks
+        siguientes lo usan (durante la carga se sigue capturando audio)."""
+        if model_size and model_size != self.model_target:
+            self.model_target = model_size
+            self._q.put(("model", model_size))
 
     def wait_idle(self, timeout=20.0):
         """Espera (hasta timeout) a que se transcriba lo que queda en cola."""

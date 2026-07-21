@@ -686,9 +686,19 @@ $("#btn-folder").addEventListener("click", () => api("reveal", {}));
 fileNameEl.addEventListener("click", renameFile);
 
 // Persistir cada ajuste al cambiarlo (así "siempre se carga la última config").
-modelSelect.addEventListener("change", () => savePref("model", modelSelect.value));
-langSelect.addEventListener("change", () => savePref("language", langSelect.value));
-chunkSelect.addEventListener("change", () => savePref("chunk", chunkSelect.value));
+// Si se está grabando, además se aplica EN VIVO (sin detener la grabación).
+modelSelect.addEventListener("change", () => {
+  savePref("model", modelSelect.value);
+  if (recording) api("live", { model: modelSelect.value }).catch(() => {});
+});
+langSelect.addEventListener("change", () => {
+  savePref("language", langSelect.value);
+  if (recording) api("live", { language: langSelect.value }).catch(() => {});
+});
+chunkSelect.addEventListener("change", () => {
+  savePref("chunk", chunkSelect.value);
+  if (recording) api("live", { chunk_seconds: Number(chunkSelect.value) }).catch(() => {});
+});
 
 // Selector de idioma de la interfaz (discreto, abajo a la derecha).
 document.querySelectorAll("#lang-switch button").forEach((b) => {

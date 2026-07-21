@@ -424,6 +424,32 @@ async def stop():
     return {"ok": True}
 
 
+class LiveBody(BaseModel):
+    model: Optional[str] = None
+    language: Optional[str] = None
+    chunk_seconds: Optional[float] = None
+
+
+@app.post("/api/live")
+async def live(body: LiveBody):
+    """Aplica cambios de idioma/modelo/duración DURANTE la grabación."""
+    if not transcriber.recording:
+        return {"ok": False}
+    if body.language is not None:
+        if body.language not in ("es", "en", "fr"):
+            raise HTTPException(400, "Idioma no válido")
+        transcriber.set_language(body.language)
+    if body.model is not None:
+        if body.model not in ("tiny", "base", "small", "medium"):
+            raise HTTPException(400, "Modelo no válido")
+        transcriber.set_model(body.model)
+    if body.chunk_seconds is not None:
+        if not 3 <= body.chunk_seconds <= 30:
+            raise HTTPException(400, "Duración no válida")
+        transcriber.set_chunk_seconds(body.chunk_seconds)
+    return {"ok": True}
+
+
 @app.get("/api/devices")
 async def devices():
     try:
