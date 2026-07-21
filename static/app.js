@@ -542,6 +542,12 @@ function renderAmounts() {
     b.addEventListener("click", () => donate(amt));
     wrap.appendChild(b);
   }
+  // Monto libre: el donante escribe la cantidad.
+  const other = document.createElement("button");
+  other.className = "custom";
+  other.textContent = t("donate_other");
+  other.addEventListener("click", customAmount);
+  wrap.appendChild(other);
   // Selector de moneda.
   const sel = $("#donate-currency");
   if (sel.options.length === 0) {
@@ -610,6 +616,18 @@ function closeDonate() {
     api("donation/dismiss", {}).catch(() => {});
   }
   $("#donate").classList.add("hidden");
+}
+
+async function customAmount() {
+  const entered = await askModal({
+    message: t("donate_amount_prompt", { currency }),
+    input: "",
+    okLabel: t("accept"),
+  });
+  if (entered === false) return; // cancelado
+  const val = parseFloat(String(entered).replace(",", ".").replace(/[^\d.]/g, ""));
+  if (!(val > 0)) { await alertModal(t("donate_amount_invalid")); return; }
+  donate(val);
 }
 
 async function donate(amount) {

@@ -12,9 +12,16 @@ import time
 
 import uvicorn
 
-from server import app, transcriber
+from server import app, transcriber, _config_dir
 
 WINDOW_TITLE = "Note Taker"
+
+
+def _storage_dir():
+    """Carpeta persistente para el estado del webview (localStorage, etc.)."""
+    path = _config_dir() / "webview"
+    path.mkdir(parents=True, exist_ok=True)
+    return path
 
 
 def _free_port() -> int:
@@ -62,7 +69,10 @@ def main():
     try:
         import webview
         webview.create_window(WINDOW_TITLE, url, width=1150, height=780, min_size=(720, 480))
-        webview.start()
+        # private_mode=False + storage_path → el localStorage (idioma, moneda,
+        # ajustes) persiste entre sesiones. Por defecto pywebview arranca en
+        # modo privado y se borraría todo al cerrar la ventana.
+        webview.start(private_mode=False, storage_path=str(_storage_dir()))
     except Exception as exc:
         print(f"No se pudo abrir la ventana nativa ({exc}); abriendo el navegador…")
         import webbrowser

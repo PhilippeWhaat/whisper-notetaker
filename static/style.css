@@ -311,7 +311,7 @@ button.record.on { background: var(--rec); border-color: var(--rec); color: #fff
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 50;
+  z-index: 70; /* por encima del modal de donación (#donate, z-index 60) */
 }
 #modal.hidden { display: none; }
 #modal-box {
