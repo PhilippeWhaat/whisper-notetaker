@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Optional
 
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -152,9 +152,49 @@ async def _startup():
         save_prefs(prefs)
 
 
+# Preferencias persistidas en prefs.json (fuente durable, independiente del
+# localStorage del webview, que no sobrevive al cierre en la app empaquetada).
+ALLOWED_PREF_KEYS = {"uiLang", "donationCurrency", "model", "language", "chunk"}
+
+
+try:
+    # Versión de assets = fecha más reciente de los estáticos. Cambia en cada
+    # build → invalida el caché del webview (evita servir JS/CSS viejos tras
+    # actualizar la app).
+    _ASSET_VER = str(int(max(p.stat().st_mtime for p in STATIC_DIR.rglob("*") if p.is_file())))
+except Exception:
+    _ASSET_VER = "1"
+
+
 @app.get("/")
 async def index():
-    return FileResponse(STATIC_DIR / "index.html")
+    html = (STATIC_DIR / "index.html").read_text(encoding="utf-8")
+    with _prefs_lock:
+        prefs = load_prefs()
+    inject = {k: prefs[k] for k in ALLOWED_PREF_KEYS if k in prefs}
+    tag = f"<script>window.__NT_PREFS__={json.dumps(inject, ensure_ascii=False)};</script>"
+    html = html.replace("</head>", tag + "</head>", 1)
+    # Añadir ?v=<versión> a los JS/CSS estáticos para forzar recarga tras build.
+    html = re.sub(r'(/static/[^"?]+\.(?:js|css))"', rf'\1?v={_ASSET_VER}"', html)
+    # Sin caché: la página lleva las preferencias inyectadas y deben venir
+    # siempre frescas (si no, el webview podría servir una versión vieja).
+    return HTMLResponse(html, headers={"Cache-Control": "no-store"})
+
+
+class PrefBody(BaseModel):
+    key: str
+    value: str
+
+
+@app.post("/api/prefs")
+async def set_pref(body: PrefBody):
+    if body.key not in ALLOWED_PREF_KEYS:
+        raise HTTPException(400, "Clave de preferencia no permitida")
+    with _prefs_lock:
+        prefs = load_prefs()
+        prefs[body.key] = body.value
+        save_prefs(prefs)
+    return {"ok": True}
 
 
 @app.get("/api/files")

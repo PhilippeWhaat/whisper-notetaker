@@ -206,19 +206,34 @@
       const forced = new URLSearchParams(location.search).get("lang");
       if (forced && T[forced]) return forced;
     } catch (e) {}
-    // 2) Elección guardada por el usuario.
+    // 2) Preferencia persistida en el servidor (inyectada en la página). Es la
+    //    fuente durable: el localStorage del webview no sobrevive al cierre.
+    try {
+      const p = (window.__NT_PREFS__ || {}).uiLang;
+      if (p && T[p]) return p;
+    } catch (e) {}
+    // 3) Elección en localStorage (respaldo dentro de la misma sesión).
     try {
       const saved = localStorage.getItem("uiLang");
       if (saved && T[saved]) return saved;
     } catch (e) {}
-    // 3) Primera apertura: idioma del sistema.
+    // 4) Primera apertura: idioma del sistema.
     return detectSystemLang();
   }
 
   function setLang(l) {
     if (!T[l]) return;
     try { localStorage.setItem("uiLang", l); } catch (e) {}
-    location.reload(); // recarga limpia con el nuevo idioma
+    // Persistir en el servidor (durable) y recargar al terminar.
+    try {
+      fetch("/api/prefs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ key: "uiLang", value: l }),
+      }).catch(() => {}).finally(() => location.reload());
+    } catch (e) {
+      location.reload();
+    }
   }
 
   const lang = pickLang();

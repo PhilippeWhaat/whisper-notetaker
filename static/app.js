@@ -5,6 +5,25 @@ const t = window.I18N.t;
 document.documentElement.lang = window.I18N.lang;
 window.I18N.applyStatic();
 
+// Preferencias persistentes. Fuente durable = prefs.json del servidor
+// (inyectado como window.__NT_PREFS__); el localStorage del webview no
+// sobrevive al cierre en la app empaquetada, así que solo es respaldo.
+function ntPref(key) {
+  const p = window.__NT_PREFS__ || {};
+  if (key in p) return p[key];
+  try { return localStorage.getItem(key); } catch (e) { return null; }
+}
+function savePref(key, value) {
+  try { localStorage.setItem(key, value); } catch (e) {}
+  try {
+    fetch("/api/prefs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key, value: String(value) }),
+    }).catch(() => {});
+  } catch (e) {}
+}
+
 const fileList = $("#file-list");
 const fileNameEl = $("#file-name");
 const statusPill = $("#status-pill");
@@ -524,9 +543,9 @@ let currency = (() => {
   try {
     const forced = new URLSearchParams(location.search).get("cur");
     if (forced && CURRENCIES[forced.toUpperCase()]) return forced.toUpperCase();
-    const saved = localStorage.getItem("donationCurrency");
-    if (saved && CURRENCIES[saved]) return saved;
   } catch (e) {}
+  const saved = ntPref("donationCurrency");
+  if (saved && CURRENCIES[saved]) return saved;
   const d = detectCurrency();
   return CURRENCIES[d] ? d : "USD";
 })();
@@ -559,7 +578,7 @@ function renderAmounts() {
     }
     sel.addEventListener("change", () => {
       currency = sel.value;
-      try { localStorage.setItem("donationCurrency", currency); } catch (e) {}
+      savePref("donationCurrency", currency);
       renderAmounts();
     });
   }
@@ -667,9 +686,9 @@ $("#btn-folder").addEventListener("click", () => api("reveal", {}));
 fileNameEl.addEventListener("click", renameFile);
 
 // Persistir cada ajuste al cambiarlo (así "siempre se carga la última config").
-modelSelect.addEventListener("change", () => localStorage.setItem("model", modelSelect.value));
-langSelect.addEventListener("change", () => localStorage.setItem("language", langSelect.value));
-chunkSelect.addEventListener("change", () => localStorage.setItem("chunk", chunkSelect.value));
+modelSelect.addEventListener("change", () => savePref("model", modelSelect.value));
+langSelect.addEventListener("change", () => savePref("language", langSelect.value));
+chunkSelect.addEventListener("change", () => savePref("chunk", chunkSelect.value));
 
 // Selector de idioma de la interfaz (discreto, abajo a la derecha).
 document.querySelectorAll("#lang-switch button").forEach((b) => {
@@ -689,17 +708,17 @@ window.addEventListener("beforeunload", () => {
   }
 });
 
-const savedModel = localStorage.getItem("model");
+const savedModel = ntPref("model");
 if (savedModel) modelSelect.value = savedModel;
 // Idioma de transcripción: si el usuario nunca lo eligió, se ajusta al idioma
 // detectado de la interfaz (si es uno de los soportados por el selector).
-const savedLang = localStorage.getItem("language");
+const savedLang = ntPref("language");
 if (savedLang) {
   langSelect.value = savedLang;
 } else if (["es", "en", "fr"].includes(window.I18N.lang)) {
   langSelect.value = window.I18N.lang;
 }
-const savedChunk = localStorage.getItem("chunk");
+const savedChunk = ntPref("chunk");
 if (savedChunk) chunkSelect.value = savedChunk;
 
 // Estado inicial del botón de grabación y la píldora de estado.
