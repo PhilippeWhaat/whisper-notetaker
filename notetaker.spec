@@ -5,9 +5,11 @@ from PyInstaller.utils.hooks import collect_all
 
 APP_NAME = "Note Taker"
 
-datas = [("static", "static")]
+datas = [("static", "static"), ("VERSION", ".")]
 binaries = []
-hiddenimports = []
+# certifi: bundle de CAs para las descargas HTTPS del auto-actualizador
+# (updater.py). Su import está en un try, así que se declara explícito.
+hiddenimports = ["certifi"]
 
 # faster-whisper y sus dependencias nativas cargan recursos en tiempo de
 # ejecución (modelo VAD de Silero, librerías de ctranslate2/onnxruntime):

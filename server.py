@@ -6,6 +6,7 @@ import re
 import subprocess
 import sys
 import threading
+import time
 import webbrowser
 from datetime import datetime
 from pathlib import Path
@@ -16,6 +17,7 @@ from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
+import updater
 from transcriber import Transcriber, list_input_devices
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -33,6 +35,21 @@ NOTES_DIR.mkdir(parents=True, exist_ok=True)
 for _tmp in NOTES_DIR.glob("*.md.tmp"):
     _tmp.unlink(missing_ok=True)
 LANGUAGE = os.environ.get("WHISPER_LANGUAGE", "es")
+
+
+def _read_version() -> str:
+    """Versión de la app. Fuente única: el archivo VERSION de la raíz, que el
+    workflow de release sobreescribe con la tag y PyInstaller empaqueta (va a
+    _MEIPASS en la app congelada)."""
+    base = Path(getattr(sys, "_MEIPASS", BASE_DIR))
+    try:
+        return (base / "VERSION").read_text(encoding="utf-8").strip() or "0.0.0"
+    except Exception:
+        return "0.0.0"
+
+
+APP_VERSION = _read_version()
+IS_FROZEN = bool(getattr(sys, "frozen", False))
 
 
 def _config_dir() -> Path:
@@ -150,6 +167,13 @@ async def _startup():
         prefs = load_prefs()
         prefs["launches"] = int(prefs.get("launches", 0)) + 1
         save_prefs(prefs)
+    # Comprobación periódica de actualizaciones (al arrancar y cada 24 h). Solo
+    # en la app instalada: en desarrollo no hay nada que actualizar.
+    if IS_FROZEN:
+        updater.start_periodic(APP_VERSION, lambda res: broadcast({
+            "type": "update", "phase": "available",
+            "latest": res.get("latest"), "notes_url": res.get("notes_url"),
+        }))
 
 
 # Preferencias persistidas en prefs.json (fuente durable, independiente del
@@ -476,6 +500,62 @@ async def reveal():
             subprocess.Popen(["xdg-open", folder])
     except Exception as exc:
         raise HTTPException(500, str(exc))
+    return {"ok": True}
+
+
+# ------------------------------------------------------------ actualización
+@app.get("/api/version")
+async def version():
+    return {"version": APP_VERSION, "frozen": IS_FROZEN}
+
+
+@app.get("/api/update/check")
+async def update_check(force: bool = False):
+    """Devuelve si hay una versión más nueva con un instalador para esta
+    plataforma. `force=true` ignora la caché (para el botón 'Buscar ahora')."""
+    return updater.check(APP_VERSION, force=force)
+
+
+_update_lock = threading.Lock()
+_update_running = {"on": False}
+
+
+def _run_update(url: str):
+    def progress(pct):
+        broadcast({"type": "update", "phase": "download", "pct": pct})
+
+    try:
+        updater.apply(url, progress)
+    except Exception as exc:
+        with _update_lock:
+            _update_running["on"] = False
+        broadcast({"type": "update", "phase": "error", "message": str(exc)})
+        return
+
+    # Instalador auxiliar lanzado: cerrar limpio para liberar los archivos y
+    # dejar que reemplace y relance. Se termina de transcribir lo pendiente.
+    broadcast({"type": "update", "phase": "relaunch"})
+    try:
+        transcriber.stop()
+        transcriber.wait_idle(timeout=10)
+    except Exception:
+        pass
+    time.sleep(0.5)
+    os._exit(0)
+
+
+@app.post("/api/update/apply")
+async def update_apply():
+    if not IS_FROZEN:
+        raise HTTPException(400, "La actualización automática solo está disponible en la app instalada")
+    res = updater.last_result() or updater.check(APP_VERSION)
+    if not res or not res.get("available") or not res.get("download_url"):
+        raise HTTPException(409, "No hay ninguna actualización disponible")
+    with _update_lock:
+        if _update_running["on"]:
+            return {"ok": True, "already": True}
+        _update_running["on"] = True
+    threading.Thread(target=_run_update, args=(res["download_url"],), daemon=True).start()
     return {"ok": True}
 
 

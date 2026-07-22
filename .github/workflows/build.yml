@@ -42,6 +42,14 @@ jobs:
       - name: Instalar dependencias
         run: pip install -r requirements.txt pyinstaller
 
+      # Fuente única de versión para el auto-actualizador: el archivo VERSION.
+      # En builds por tag se fija a la tag (sin la 'v'); en workflow_dispatch se
+      # respeta el valor ya comprometido en el repo.
+      - name: Fijar versión desde la tag
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: bash
+        run: echo "${GITHUB_REF_NAME#v}" > VERSION
+
       - name: Construir
         run: pyinstaller notetaker.spec --noconfirm
 

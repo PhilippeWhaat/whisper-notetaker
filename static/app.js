@@ -452,6 +452,7 @@ function connectWS() {
     const msg = JSON.parse(ev.data);
     if (msg.type === "segment") appendSegment(msg.text, msg.trim);
     else if (msg.type === "status") setStatus(msg);
+    else if (msg.type === "update") onUpdateMessage(msg);
   };
   ws.onclose = () => setTimeout(connectWS, 1500);
 }
@@ -659,6 +660,86 @@ async function donate(amount) {
   closeDonate(); // respeta la casilla "¡Ya doné!" si estaba marcada
 }
 
+// ---------------------------------------------------------- actualización
+const updateBar = $("#update-bar");
+const updateMsg = $("#update-msg");
+const updateGo = $("#update-go");
+const updateDismiss = $("#update-dismiss");
+const updateProgress = $("#update-progress");
+const updateProgressFill = $("#update-progress-fill");
+let updateInfo = null; // { latest, notes_url, ... }
+let appFrozen = false; // ¿app instalada? (en desarrollo no hay auto-update)
+
+function showUpdateBar(res) {
+  updateInfo = res;
+  // Si el usuario descartó esta misma versión, no reaparece hasta que salga
+  // otra más nueva.
+  try {
+    if (sessionStorage.getItem("updateDismissed") === res.latest) return;
+  } catch (e) {}
+  updateMsg.textContent = t("update_available", { v: res.latest || "" });
+  updateGo.textContent = appFrozen ? t("update_now") : t("update_view");
+  updateGo.disabled = false;
+  updateDismiss.classList.remove("hidden");
+  updateProgress.classList.add("hidden");
+  updateProgressFill.style.width = "0";
+  updateBar.classList.remove("hidden");
+}
+
+function onUpdateMessage(msg) {
+  if (msg.phase === "available") {
+    showUpdateBar({ latest: msg.latest, notes_url: msg.notes_url, available: true });
+  } else if (msg.phase === "download") {
+    updateProgress.classList.remove("hidden");
+    updateProgressFill.style.width = (msg.pct || 0) + "%";
+    updateMsg.textContent = t("update_downloading", { pct: msg.pct || 0 });
+  } else if (msg.phase === "relaunch") {
+    updateProgressFill.style.width = "100%";
+    updateMsg.textContent = t("update_installing");
+    updateGo.classList.add("hidden");
+    updateDismiss.classList.add("hidden");
+  } else if (msg.phase === "error") {
+    updateProgress.classList.add("hidden");
+    updateMsg.textContent = t("update_error");
+    updateGo.disabled = false;
+    updateGo.textContent = t("update_now");
+  }
+}
+
+async function initUpdates() {
+  try {
+    const v = await api("version");
+    appFrozen = !!v.frozen;
+  } catch (e) {}
+  try {
+    const res = await api("update/check");
+    if (res && res.available) showUpdateBar(res);
+  } catch (e) {}
+}
+
+updateDismiss.addEventListener("click", () => {
+  try {
+    if (updateInfo && updateInfo.latest) sessionStorage.setItem("updateDismissed", updateInfo.latest);
+  } catch (e) {}
+  updateBar.classList.add("hidden");
+});
+
+updateGo.addEventListener("click", async () => {
+  // En desarrollo (no instalada) no hay auto-update: se abre el release.
+  if (!appFrozen) {
+    if (updateInfo && updateInfo.notes_url) window.open(updateInfo.notes_url, "_blank");
+    return;
+  }
+  updateGo.disabled = true;
+  updateGo.textContent = t("update_downloading", { pct: 0 });
+  updateProgress.classList.remove("hidden");
+  try {
+    await api("update/apply", {});
+  } catch (e) {
+    onUpdateMessage({ phase: "error", message: String(e && e.message || e) });
+  }
+});
+
 async function maybePromptDonation() {
   if (!donationCfg.configured) return;
   // Mostrar como máximo una vez por apertura de la app. sessionStorage se
@@ -739,6 +820,7 @@ connectWS();
 refreshFiles();
 loadDevices();
 loadDonationConfig().then(maybePromptDonation);
+initUpdates();
 // La carpeta puede cambiar desde fuera (Finder, otra app): la lista se
 // refresca sola periódicamente y al volver a la ventana.
 setInterval(refreshFiles, 8000);
