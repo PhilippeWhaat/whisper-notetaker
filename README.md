@@ -47,6 +47,20 @@ No hace falta instalar Python ni usar la terminal. Descárgalo desde
 
 Las transcripciones se guardan en `Documentos/Note Taker/`.
 
+### Actualizaciones automáticas
+
+La app comprueba si hay una versión nueva al abrirse y una vez al día (contra
+la página de [Releases](https://github.com/PhilippeWhaat/whisper-notetaker/releases/latest)).
+Cuando hay una, aparece una barra discreta **«Nueva versión disponible»** con un
+botón **Actualizar**: al pulsarlo descarga el instalador correcto para tu
+sistema, lo aplica y reinicia la app sola. Sin reinicios sorpresa; puedes
+posponerlo con la ✕.
+
+- **Windows**: instala en silencio (por usuario, sin admin) y relanza.
+- **Linux**: reemplaza el `.AppImage` en su sitio y relanza.
+- **macOS**: reemplaza la app en su sitio y relanza; si no tiene permiso, abre
+  el `.dmg` para que arrastres a Aplicaciones como siempre.
+
 ### Generar los ejecutables
 
 - La forma recomendada es GitHub Actions: crea un tag `vX.Y.Z` (o lanza el

@@ -77,6 +77,17 @@
   </aside>
 
   <main id="main">
+    <div id="update-bar" class="hidden">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+           stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/>
+      </svg>
+      <span id="update-msg"></span>
+      <span class="spacer"></span>
+      <button id="update-go" class="primary"></button>
+      <button id="update-dismiss" title="">✕</button>
+      <div id="update-progress" class="hidden"><div id="update-progress-fill"></div></div>
+    </div>
     <div id="toolbar">
       <span id="file-name" data-i18n-title="rename_hint" data-i18n="no_file" title="Clic para renombrar">Sin archivo</span>
       <span class="spacer"></span>
